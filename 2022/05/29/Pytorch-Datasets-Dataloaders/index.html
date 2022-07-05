@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Datesets&amp;Dataloaders 处理数据样本的代码可能会变得混乱且难以维护。理想情况下，我们希望我们的数据集代码与模型训练代码分离，以获得更好的可读性和模块化。 PyTorch提供了两个数据原语:torch.utils.data.DataLoader和torch.utils.data.Dataset，它们允许你使用预加载的数据集和你自己的数据 Dataset stores th">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Pytorch-Datasets&amp;Dataloaders">
+<meta property="og:url" content="https://roverscode.github.io/2022/05/29/Pytorch-Datasets-Dataloaders/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="Datesets&amp;Dataloaders 处理数据样本的代码可能会变得混乱且难以维护。理想情况下，我们希望我们的数据集代码与模型训练代码分离，以获得更好的可读性和模块化。 PyTorch提供了两个数据原语:torch.utils.data.DataLoader和torch.utils.data.Dataset，它们允许你使用预加载的数据集和你自己的数据 Dataset stores th">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-05-29T05:51:33.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:32.979Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="NoteBook">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2022/05/29/Pytorch-Datasets-Dataloaders/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":"","permalink":"https://roverscode.github.io/2022/05/29/Pytorch-Datasets-Dataloaders/","path":"2022/05/29/Pytorch-Datasets-Dataloaders/","title":"Pytorch-Datasets&Dataloaders"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Pytorch-Datasets&Dataloaders | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#datesetsdataloaders"><span class="nav-number">1.</span> <span class="nav-text"> Datesets&amp;Dataloaders</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#loading-a-dataset"><span class="nav-number">2.</span> <span class="nav-text"> Loading a Dataset</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#iterating-and-visualizing-the-dataset"><span class="nav-number">3.</span> <span class="nav-text"> Iterating and Visualizing the Dataset</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#creating-a-custom-dataset-for-your-files"><span class="nav-number">4.</span> <span class="nav-text"> Creating a Custom Dataset for your files</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#init"><span class="nav-number">4.0.1.</span> <span class="nav-text"> init</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#len"><span class="nav-number">4.0.2.</span> <span class="nav-text"> len</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#geiitem"><span class="nav-number">4.0.3.</span> <span class="nav-text"> geiitem</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#preparing-your-data-for-training-with-dataloaders"><span class="nav-number">5.</span> <span class="nav-text"> Preparing your data for training with DataLoaders</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#iterate-througn-the-dataloader%E9%81%8D%E5%8E%86dataloader"><span class="nav-number">6.</span> <span class="nav-text"> Iterate througn the DataLoader(遍历DataLoader)</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2022/05/29/Pytorch-Datasets-Dataloaders/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Pytorch-Datasets&Dataloaders | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Pytorch-Datasets&Dataloaders
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-05-29 13:51:33" itemprop="dateCreated datePublished" datetime="2022-05-29T13:51:33+08:00">2022-05-29</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:32" itemprop="dateModified" datetime="2022-07-02T13:08:32+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Pytorch/" itemprop="url" rel="index"><span itemprop="name">Pytorch</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Pytorch/Introductory/" itemprop="url" rel="index"><span itemprop="name">Introductory</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2022/05/29/Pytorch-Datasets-Dataloaders/" class="post-meta-item leancloud_visitors" data-flag-title="Pytorch-Datasets&Dataloaders" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>4.8k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="datesetsdataloaders"><a class="markdownIt-Anchor" href="#datesetsdataloaders"></a> Datesets&amp;Dataloaders</h1>
+<p>处理数据样本的代码可能会变得混乱且难以维护。理想情况下，我们希望我们的数据集代码与模型训练代码分离，以获得更好的可读性和模块化。</p>
+<p>PyTorch提供了两个数据原语:<code>torch.utils.data.DataLoader</code>和<code>torch.utils.data.Dataset</code>，它们允许你使用预加载的数据集和你自己的数据</p>
+<p><code>Dataset</code> stores the <strong>samples and their corresponding labels</strong>, and <code>DataLoader</code> <strong>wraps an iterable</strong> around the <code>Dataset</code> to enable easy access to the samples.</p>
+<p>PyTorch域库提供了许多预加载的数据集(如FashionMNIST)，它们子类化了<code>torch.util.data. Dataset</code>并实现具体的函数给特定的数据。</p>
+<p>They can be used to prototype and benchmark your model. You can find them here: <a target="_blank" rel="noopener" href="https://pytorch.org/vision/stable/datasets.html">Image Datasets</a>, <a target="_blank" rel="noopener" href="https://pytorch.org/text/stable/datasets.html">Text Datasets</a>, and <a target="_blank" rel="noopener" href="https://pytorch.org/audio/stable/datasets.html">Audio Datasets</a></p>
+<span id="more"></span>
+<h1 id="loading-a-dataset"><a class="markdownIt-Anchor" href="#loading-a-dataset"></a> Loading a Dataset</h1>
+<p>Here is an example of how to load the <a target="_blank" rel="noopener" href="https://research.zalando.com/project/fashion_mnist/fashion_mnist/">Fashion-MNIST</a> dataset from TorchVision. Fashion-MNIST由60000 training examples 和 10000 test examples组成。每个示例包括28×28灰度图像和来自10个类中的一个的关联标签。</p>
+<p><strong>We load the <a target="_blank" rel="noopener" href="https://pytorch.org/vision/stable/datasets.html#fashion-mnist">FashionMNIST Dataset</a> with the following parameters:</strong></p>
+<ul>
+<li><strong><code>root</code> is the path where the train/test data is stored,</strong></li>
+<li><strong><code>train</code> specifies training or test dataset（指定要训练集还是要测试集)</strong></li>
+<li><strong><code>download=True</code> downloads the data from the internet if it’s not available at <code>root</code>.</strong></li>
+<li><strong><code>transform</code> and <code>target_transform</code> specify the feature and label transformations(指定特征和标签的转换-转换数据类型?)</strong></li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> Dataset</span><br><span class="line"><span class="keyword">from</span> torchvision <span class="keyword">import</span> datasets</span><br><span class="line"><span class="keyword">from</span> torchvision.transforms <span class="keyword">import</span> ToTensor</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"></span><br><span class="line">training_data = datasets.FashionMNIST(</span><br><span class="line">    root=<span class="string">&quot;data&quot;</span>,</span><br><span class="line">    train=<span class="literal">True</span>,</span><br><span class="line">    download=<span class="literal">True</span>,</span><br><span class="line">    transform=ToTensor()</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">test_data = datasets.FashionMNIST(</span><br><span class="line">    root=<span class="string">&quot;data&quot;</span>,</span><br><span class="line">    train=<span class="literal">False</span>,</span><br><span class="line">    download=<span class="literal">True</span>,</span><br><span class="line">    transform=ToTensor()</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<h1 id="iterating-and-visualizing-the-dataset"><a class="markdownIt-Anchor" href="#iterating-and-visualizing-the-dataset"></a> Iterating and Visualizing the Dataset</h1>
+<p>我们可以像列表一样手动索引<code>Datasets</code>:<code>train_data[index]</code>. 我们可以使用<code>matplotlib</code>去可视化一些训练数据。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">labels_map = &#123;</span><br><span class="line">    <span class="number">0</span>: <span class="string">&quot;T-Shirt&quot;</span>,</span><br><span class="line">    <span class="number">1</span>: <span class="string">&quot;Trouser&quot;</span>,</span><br><span class="line">    <span class="number">2</span>: <span class="string">&quot;Pullover&quot;</span>,</span><br><span class="line">    <span class="number">3</span>: <span class="string">&quot;Dress&quot;</span>,</span><br><span class="line">    <span class="number">4</span>: <span class="string">&quot;Coat&quot;</span>,</span><br><span class="line">    <span class="number">5</span>: <span class="string">&quot;Sandal&quot;</span>,</span><br><span class="line">    <span class="number">6</span>: <span class="string">&quot;Shirt&quot;</span>,</span><br><span class="line">    <span class="number">7</span>: <span class="string">&quot;Sneaker&quot;</span>,</span><br><span class="line">    <span class="number">8</span>: <span class="string">&quot;Bag&quot;</span>,</span><br><span class="line">    <span class="number">9</span>: <span class="string">&quot;Ankle Boot&quot;</span>,</span><br><span class="line">&#125;</span><br><span class="line">figure = plt.figure(figsize=(<span class="number">8</span>, <span class="number">8</span>))</span><br><span class="line">cols, rows = <span class="number">3</span>, <span class="number">3</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">1</span>, cols * rows + <span class="number">1</span>):</span><br><span class="line">    sample_idx = torch.randint(<span class="built_in">len</span>(training_data), size=(<span class="number">1</span>,)).item()<span class="comment">#sample_idx是 int</span></span><br><span class="line">    img, label = training_data[sample_idx] <span class="comment">#根据training_data[int]，返回的是元组(数据,标签)</span></span><br><span class="line">    figure.add_subplot(rows, cols, i)</span><br><span class="line">    plt.title(labels_map[label])</span><br><span class="line">    plt.axis(<span class="string">&quot;off&quot;</span>)</span><br><span class="line">    plt.imshow(img.squeeze(), cmap=<span class="string">&quot;gray&quot;</span>)</span><br><span class="line">plt.show()</span><br></pre></td></tr></table></figure>
+<h1 id="creating-a-custom-dataset-for-your-files"><a class="markdownIt-Anchor" href="#creating-a-custom-dataset-for-your-files"></a> Creating a Custom Dataset for your files</h1>
+<p>定义一个数据集类继承与基类Dataset且必须实现三个函数**: <code>__init__, __len__, and __getitem__.</code>**</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">from</span> torchvision.io <span class="keyword">import</span> read_image</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">CustomImageDataset</span>(<span class="title class_ inherited__">Dataset</span>):</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__init__</span>(<span class="params">self, annotations_file, img_dir, transform=<span class="literal">None</span>, target_transform=<span class="literal">None</span></span>):</span><br><span class="line">        self.img_labels = pd.read_csv(annotations_file)</span><br><span class="line">        self.img_dir = img_dir</span><br><span class="line">        self.transform = transform</span><br><span class="line">        self.target_transform = target_transform</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__len__</span>(<span class="params">self</span>):</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">len</span>(self.img_labels)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">__getitem__</span>(<span class="params">self, idx</span>):</span><br><span class="line">        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, <span class="number">0</span>])</span><br><span class="line">        image = read_image(img_path)</span><br><span class="line">        label = self.img_labels.iloc[idx, <span class="number">1</span>]</span><br><span class="line">        <span class="keyword">if</span> self.transform:</span><br><span class="line">            image = self.transform(image)</span><br><span class="line">        <span class="keyword">if</span> self.target_transform:</span><br><span class="line">            label = self.target_transform(label)</span><br><span class="line">        <span class="keyword">return</span> image, label</span><br></pre></td></tr></table></figure>
+<h3 id="init"><a class="markdownIt-Anchor" href="#init"></a> <strong>init</strong></h3>
+<p><code>__init__</code>function只在实例化数据集对象执行一次。</p>
+<p>我们初始化包含<code>images</code>、<code>annotations</code> file和<code>both transforms</code>(下一节将详细介绍)。</p>
+<h3 id="len"><a class="markdownIt-Anchor" href="#len"></a> len</h3>
+<p><strong>The <code>__len__</code> function returns the number of samples in our dataset.</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">__len__</span>(<span class="params">self</span>):</span><br><span class="line">     <span class="keyword">return</span> <span class="built_in">len</span>(self.img_labels)</span><br></pre></td></tr></table></figure>
+<h3 id="geiitem"><a class="markdownIt-Anchor" href="#geiitem"></a> geiitem</h3>
+<p><strong>The <strong>getitem</strong> function loads and returns a sample from the dataset at the given index <code>idx</code></strong></p>
+<p>基于索引，它识别image在disk的位置，使用<code>read_image</code>将其转换为Tensor，在**<code>self.img_labels</code>中的CSV数据中检索相应的label，调用它们的transform function(如果有)，最后返回一个元组(image,lable)。**</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">__getitem__</span>(<span class="params">self, idx</span>):</span><br><span class="line">    img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, <span class="number">0</span>])</span><br><span class="line">    image = read_image(img_path)</span><br><span class="line">    label = self.img_labels.iloc[idx, <span class="number">1</span>]</span><br><span class="line">    <span class="keyword">if</span> self.transform:</span><br><span class="line">        image = self.transform(image)</span><br><span class="line">    <span class="keyword">if</span> self.target_transform:</span><br><span class="line">        label = self.target_transform(label)</span><br><span class="line">    <span class="keyword">return</span> image, label</span><br></pre></td></tr></table></figure>
+<h1 id="preparing-your-data-for-training-with-dataloaders"><a class="markdownIt-Anchor" href="#preparing-your-data-for-training-with-dataloaders"></a> Preparing your data for training with DataLoaders</h1>
+<p><strong>The <code>Dataset</code> retrieves our dataset’s features and labels one sample at a time. While training a model, we typically want to pass samples in “<code>minibatches</code>”, <code>reshuffle</code> the data at every epoch to reduce model <code>overfitting</code>, and use Python’s <code>multiprocessing</code> to speed up data retrieval.</strong></p>
+<p>DataLoader是一个可迭代对象，它在一个简单的API中为我们抽象了这种复杂性。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader</span><br><span class="line"></span><br><span class="line">train_dataloader = DataLoader(training_data, batch_size=<span class="number">64</span>, shuffle=<span class="literal">True</span>)</span><br><span class="line">test_dataloader = DataLoader(test_data, batch_size=<span class="number">64</span>, shuffle=<span class="literal">True</span>)</span><br></pre></td></tr></table></figure>
+<h1 id="iterate-througn-the-dataloader遍历dataloader"><a class="markdownIt-Anchor" href="#iterate-througn-the-dataloader遍历dataloader"></a> Iterate througn the DataLoader(遍历DataLoader)</h1>
+<p><strong>We have loaded that dataset into the <code>DataLoader</code> and can iterate through the dataset as needed. Each iteration below returns a batch  of <code>train_features</code> and <code>train_labels</code>(containing batch size =64 features and labels respectively). Because we specified <code>shuffle=True</code>, after we iterate over all batches the data is shuffled(要对数据加载顺序进行更细粒度的控制, take a look at <a target="_blank" rel="noopener" href="https://pytorch.org/docs/stable/data.html#data-loading-order-and-sampler">Samplers</a>).</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Display image and label.</span></span><br><span class="line">train_features, train_labels = <span class="built_in">next</span>(<span class="built_in">iter</span>(train_dataloader))</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Feature batch shape: <span class="subst">&#123;train_features.size()&#125;</span>&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Labels batch shape: <span class="subst">&#123;train_labels.size()&#125;</span>&quot;</span>)</span><br><span class="line">img = train_features[<span class="number">0</span>].squeeze()</span><br><span class="line">label = train_labels[<span class="number">0</span>]</span><br><span class="line">plt.imshow(img, cmap=<span class="string">&quot;gray&quot;</span>)</span><br><span class="line">plt.show()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&quot;Label: <span class="subst">&#123;label&#125;</span>&quot;</span>)</span><br></pre></td></tr></table></figure>
+<p>Out:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Feature batch shape: torch.Size([<span class="number">64</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>])</span><br><span class="line">Labels batch shape: torch.Size([<span class="number">64</span>])</span><br><span class="line">Label: <span class="number">1</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2022-05-29</div>
+      <div class="popular-posts-title"><a href="2022/05/29/Pytorch快速入门/" rel="bookmark">Pytroch快速入门</a></div>
+        <div class="popular-posts-excerpt"><p><h1 id="quickstart"><a class="markdownIt-Anchor" href="#quickstart"></a> QuickStart</h1>
+<p>PyTorch有两个处理数据的基本单元</p>
+<ul>
+<li>torch.utils.data.DataLoader</li>
+<li>torch.utils.data.Dataset</li>
+</ul>
+<p>Dataset存储数据集，DataLoader wraps an iterable around the <code>Dataset</code>.</p>
+<p>PyTorch提供特定领域得库</p>
+<ul>
+<li><code>TorchText</code></li>
+<li><code>TorchVision</code></li>
+<li><code>TorchAudio</code></li>
+<li>它们都包含数据集</li>
+</ul>
+<p>在这里，我们使用TorchVision dataset。在QuickStart我们使用FashionMNIST。每一个TorchVision  的<code>Dataset</code>都包括两个argument(参数)：<code>transform</code>and<code>target_transform</code> 分别修改samples 和 labels。</p></p></div>
+    </li>
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2022-05-29</div>
+      <div class="popular-posts-title"><a href="2022/05/29/Pytorch-Optimization/" rel="bookmark">Pytorch-Optimization</a></div>
+        <div class="popular-posts-excerpt"><p><h1 id="optimizing-model-parameters"><a class="markdownIt-Anchor" href="#optimizing-model-parameters"></a> Optimizing Model Parameters</h1>
+<p>现在我们已经有了模型和数据，现在是时候通过优化数据上的参数来训练、验证和测试模型了。</p>
+<p>训练模型是一个迭代的过程。<strong>in each iteration (called an <em>epoch</em>) the model makes a guess about the output, calculates the error in its guess (<em>loss</em>), 收集<code>loss</code>对其<code>parameters</code>的导数 (as we saw in the <a target="_blank" rel="noopener" href="https://pytorch.org/tutorials/beginner/basics/autograd_tutorial.html">previous section</a>), and optimizes these parameters using gradient descent.</strong></p></p></div>
+    </li>
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2022-05-29</div>
+      <div class="popular-posts-title"><a href="2022/05/29/Pytorch-save-and-load-the-model/" rel="bookmark">Pytorch-save and load the model</a></div>
+        <div class="popular-posts-excerpt"><p><h1 id="save-and-load-the-model"><a class="markdownIt-Anchor" href="#save-and-load-the-model"></a> Save and Load the model</h1>
+<p>在本节中，我们将了解如何通过保存、加载和运行模型预测来持久化模型状态。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> torchvision.models <span class="keyword">as</span> models</span><br></pre></td></tr></table></figure></p></div>
+    </li>
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2022-05-29</div>
+      <div class="popular-posts-title"><a href="2022/05/29/Pytorch-Bulid-Model/" rel="bookmark">Pytorch-Bulid Model</a></div>
+        <div class="popular-posts-excerpt"><p><h1 id="bulid-the-neural-network"><a class="markdownIt-Anchor" href="#bulid-the-neural-network"></a> Bulid The Neural Network</h1>
+<p>神经网络由对数据进行操作的层/模块组成。</p>
+<p><code>torch.nn</code>提供了构建自己的神经网络所需的所有构建块</p>
+<p>每一个在pytorch的module都是<code>nn.Module</code>的子类。神经网络是由其他Module（layer）组成的Module本身。这种嵌套结构允许轻松构建和管理复杂的体系结构。</p>
+<p><strong>In the following sections, we’ll build a neural network to classify images in the FashionMNIST dataset.</strong></p></p></div>
+    </li>
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2022-05-29</div>
+      <div class="popular-posts-title"><a href="2022/05/29/Pytorch-saving-and-loading-a-general-Checkpoint/" rel="bookmark">Pytorch-saving and loading a general Checkpoint</a></div>
+        <div class="popular-posts-excerpt"><p><h1 id="saving-and-loading-a-general-checkpoint-in-pytorch"><a class="markdownIt-Anchor" href="#saving-and-loading-a-general-checkpoint-in-pytorch"></a> Saving and Loading a general Checkpoint in Pytorch</h1>
+<p>保存和加载一个用于推断或恢复训练的General Checkpoint(通用检查点)模型，可以帮助您从上次中断的地方恢复。</p>
+<p>当我们要保存general checkpoint，我们要保存的不仅仅是model的<code>state_dict</code>。保存<strong>optimizer’s state_dict也很重要，因为它包含缓冲区和参数，这些参数会随着模型的训练而更新。其他你可能想要保存的东西是：</strong></p>
+<ol>
+<li>你中断时候的<code>epoch</code></li>
+<li>最近记录的training loss</li>
+<li>Embedding层的参数</li>
+</ol>
+<p>还可以保存更多，主要基于你自己的项目。</p></p></div>
+    </li>
+  </ul>
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/NoteBook/" rel="tag"><i class="fa fa-tag"></i> NoteBook</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/05/29/Pytorch-Tensor/" rel="prev" title="Pytorch-Tensor">
+                  <i class="fa fa-chevron-left"></i> Pytorch-Tensor
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/05/29/Pytorch-Bulid-Model/" rel="next" title="Pytorch-Bulid Model">
+                  Pytorch-Bulid Model <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>

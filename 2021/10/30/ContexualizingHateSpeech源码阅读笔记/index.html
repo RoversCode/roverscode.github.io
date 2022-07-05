@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="论文阅读笔记：请看我写的Contextualizing Hate Speech Classifiers with Post-hoc explanation文章。 在这里只写关键函数以及说明原论文的正则化到底是怎么回事。 源码github地址：https:&#x2F;&#x2F;github.com&#x2F;BrendanKennedy&#x2F;contextualizing-hate-speech-models-with-expla">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ContexualizingHateSpeech源码阅读笔记">
+<meta property="og:url" content="https://roverscode.github.io/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="论文阅读笔记：请看我写的Contextualizing Hate Speech Classifiers with Post-hoc explanation文章。 在这里只写关键函数以及说明原论文的正则化到底是怎么回事。 源码github地址：https:&#x2F;&#x2F;github.com&#x2F;BrendanKennedy&#x2F;contextualizing-hate-speech-models-with-expla">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-10-30T03:29:42.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:32.943Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="Code Reading">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://roverscode.github.io/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/","path":"2021/10/30/ContexualizingHateSpeech源码阅读笔记/","title":"ContexualizingHateSpeech源码阅读笔记"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>ContexualizingHateSpeech源码阅读笔记 | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%AD%A3%E6%96%87"><span class="nav-number">1.</span> <span class="nav-text"> 正文</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86%E5%85%B3%E9%94%AE%E5%87%BD%E6%95%B0"><span class="nav-number">1.0.1.</span> <span class="nav-text"> 数据处理关键函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#soc"><span class="nav-number">1.0.2.</span> <span class="nav-text"> SOC</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="ContexualizingHateSpeech源码阅读笔记 | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          ContexualizingHateSpeech源码阅读笔记
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-10-30 11:29:42" itemprop="dateCreated datePublished" datetime="2021-10-30T11:29:42+08:00">2021-10-30</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:32" itemprop="dateModified" datetime="2022-07-02T13:08:32+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Paper-Reading/" itemprop="url" rel="index"><span itemprop="name">Paper Reading</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Paper-Reading/Code-Reading/" itemprop="url" rel="index"><span itemprop="name">Code Reading</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" class="post-meta-item leancloud_visitors" data-flag-title="ContexualizingHateSpeech源码阅读笔记" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/10/30/ContexualizingHateSpeech源码阅读笔记/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>5.6k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>5 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>论文阅读笔记：请看我写的Contextualizing Hate Speech Classifiers with Post-hoc explanation文章。</p>
+<p>在这里只写关键函数以及说明原论文的正则化到底是怎么回事。</p>
+<p>源码github地址：<a target="_blank" rel="noopener" href="https://github.com/BrendanKennedy/contextualizing-hate-speech-models-with-explanations">https://github.com/BrendanKennedy/contextualizing-hate-speech-models-with-explanations</a></p>
+<span id="more"></span>
+<h1 id="正文"><a class="markdownIt-Anchor" href="#正文"></a> 正文</h1>
+<p>源码中有很多的运行版本，鉴于我们只想要知道所谓的SOC和正则化是怎么回事。所以我按照gab_soc.sh走了一遍。</p>
+<blockquote>
+<p>本来想从数据处理，模型运算，SOC，SOC正则化的流程讲的。但是代码实在太多，我们省略大部分代码。只讲关键。</p>
+</blockquote>
+<h3 id="数据处理关键函数"><a class="markdownIt-Anchor" href="#数据处理关键函数"></a> 数据处理关键函数</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">GabProcessor</span>:</span><br><span class="line">    ....</span><br><span class="line">    <span class="keyword">def</span> <span class="title function_">_create_examples</span>(<span class="params">self, data_dir, split, label=<span class="literal">None</span></span>):</span><br><span class="line">       <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        Create a list of InputExample, where .text_a is raw text and .label is specified</span></span><br><span class="line"><span class="string">        as configs.label_groups</span></span><br><span class="line"><span class="string">        :param data_dir:</span></span><br><span class="line"><span class="string">        :param split:</span></span><br><span class="line"><span class="string">        :param label:</span></span><br><span class="line"><span class="string">        :return:</span></span><br><span class="line"><span class="string">       &quot;&quot;&quot;</span></span><br><span class="line">        f = <span class="built_in">open</span>(os.path.join(data_dir, <span class="string">&#x27;%s.jsonl&#x27;</span> % split))</span><br><span class="line">        examples = []</span><br><span class="line">        <span class="keyword">for</span> i, line <span class="keyword">in</span> <span class="built_in">enumerate</span>(f.readlines()):</span><br><span class="line">            data = json.loads(line)</span><br><span class="line">            <span class="comment">#InputExample是一个只有构造函数的类，这个作者喜欢将数据包装在类里。</span></span><br><span class="line">            <span class="comment">#所以这句代码只是将每一个句子包装成InputExample，guid源码弃用了。</span></span><br><span class="line">            example = InputExample(text_a=data[<span class="string">&#x27;Text&#x27;</span>], guid=<span class="string">&#x27;%s-%s&#x27;</span> % (split, i))</span><br><span class="line">            <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">            label_groups=[&quot;hd&quot;,&quot;cv&quot;]</span></span><br><span class="line"><span class="string">            用来判断该句子是否是Hate Speech。</span></span><br><span class="line"><span class="string">            </span></span><br><span class="line"><span class="string">       		作者判断的策略是 hd or cv，任何一个为真，该句子就是Hate Speech</span></span><br><span class="line"><span class="string">            &#x27;&#x27;&#x27;</span></span><br><span class="line">            <span class="keyword">for</span> j, label_group <span class="keyword">in</span> <span class="built_in">enumerate</span>(self.label_groups):</span><br><span class="line">                tn = <span class="number">0</span></span><br><span class="line">                <span class="keyword">for</span> key <span class="keyword">in</span> label_group:</span><br><span class="line">                    tn += <span class="built_in">int</span>(data[key])</span><br><span class="line">                <span class="built_in">setattr</span>(example, <span class="string">&#x27;label&#x27;</span> <span class="keyword">if</span> j == <span class="number">0</span> <span class="keyword">else</span> <span class="string">&#x27;label_%d&#x27;</span> % j, <span class="number">1</span> <span class="keyword">if</span> tn <span class="keyword">else</span> <span class="number">0</span>)</span><br><span class="line">            <span class="keyword">if</span> label <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> example.label == label:</span><br><span class="line">                examples.append(example)</span><br><span class="line">        <span class="keyword">return</span> exampl</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">train_features = convert_examples_to_features(train_examples, label_list, args.max_seq_length, tokenizer, output_mode, configs)</span><br></pre></td></tr></table></figure>
+<p>convert_examples_to_features讲句子处理成离散数列。喂给模型。</p>
+<h3 id="soc"><a class="markdownIt-Anchor" href="#soc"></a> SOC</h3>
+<p>数据处理完后，按照正常步骤喂给BERT模型。输出结果，计算LOSS。但是并不执行梯度运算。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> args.reg_explanations:</span><br><span class="line">    <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    reg_loss是sum(neutral_word_scores)，所有neutral_word score的总和</span></span><br><span class="line"><span class="string">    reg_cnt是neutral_word_scores的长度</span></span><br><span class="line"><span class="string">    &#x27;&#x27;&#x27;</span></span><br><span class="line">    reg_loss, reg_cnt = explainer.compute_explanation_loss(input_ids, input_mask, segment_ids, label_ids,</span><br><span class="line">    do_backprop=<span class="literal">True</span>)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">compute_explanation_loss</span>(<span class="params">self, input_ids_batch, input_mask_batch, segment_ids_batch, label_ids_batch,do_backprop=<span class="literal">False</span></span>):</span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">#很明显每一个neureal_word的score，由do_attribution得来</span></span><br><span class="line">        <span class="comment">#看源码可以知道这句代码在for循环下，所以一个neureal_word计算一次score</span></span><br><span class="line">        score = self.algo.do_attribution(input_ids, input_mask, segment_ids, x_region, label_ids,</span><br><span class="line">                                               return_variable=<span class="literal">True</span>,additional_mask=nw_positions)</span><br><span class="line">        ....</span><br><span class="line">        <span class="comment">#得到的score，按照论文的公式计算</span></span><br><span class="line">        score = self.configs.reg_strength * (score ** <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">        <span class="comment">#这句代码就是正则化。因为Pytorch每一次计算在进行bcakward就是累加梯度</span></span><br><span class="line">        <span class="comment">#socre是group identifier的importance score。对其进行累加梯度，就相当于后面就是最小化group identifier</span></span><br><span class="line">        <span class="comment">#score</span></span><br><span class="line">        <span class="keyword">if</span> do_backprop:</span><br><span class="line">            score.backward()</span><br><span class="line"></span><br><span class="line">        ...</span><br><span class="line">        neutral_word_scores.append(score.item())</span><br><span class="line"></span><br><span class="line">  	<span class="keyword">if</span> neutral_word_scores:</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">sum</span>(neutral_word_scores), <span class="built_in">len</span>(neutral_word_scores)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">return</span> <span class="number">0.</span>, <span class="number">0</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">  <span class="keyword">def</span> <span class="title function_">do_attribution</span>(<span class="params">self, input_ids, input_mask, segment_ids, region, label=<span class="literal">None</span>, return_variable=<span class="literal">False</span>,additional_mask=[]</span>):</span><br><span class="line">...</span><br><span class="line">      <span class="comment">#mask_regions上下文返回[(上界，下界)]，就是论文所说的N</span></span><br><span class="line">      mask_regions = self.get_ngram_mask_region(region, inp_flatten)</span><br><span class="line"></span><br><span class="line">      <span class="comment">#看到这里，继续往下看occlude_input_with_masks_and_run</span></span><br><span class="line">      score = self.occlude_input_with_masks_and_run(inp_flatten, inp_mask_flatten, segment_ids, [region],mask_regions, label, return_variable, additional_mask)</span><br><span class="line">      <span class="keyword">return</span> score</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line">  <span class="keyword">def</span> <span class="title function_">occlude_input_with_masks_and_run</span>(<span class="params">self, inp_bak, inp_mask, segment_ids, x_regions, nb_regions, label,return_variable=<span class="literal">False</span>, additional_mask=[]</span>):</span><br><span class="line"></span><br><span class="line">		...</span><br><span class="line">      <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">      fw_sample_output和bw_sample_output的数据形式</span></span><br><span class="line"><span class="string">      [</span></span><br><span class="line"><span class="string">      第一个词的采样[]</span></span><br><span class="line"><span class="string">      第二个词的采样[]</span></span><br><span class="line"><span class="string">      ....</span></span><br><span class="line"><span class="string">      上下文最后一个词采样[]     </span></span><br><span class="line"><span class="string">      ]</span></span><br><span class="line"><span class="string">      &#x27;&#x27;&#x27;</span></span><br><span class="line">      <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">      这句代码是采样neureal_word的上下文情况，作者设定了采样20个上下文版本。从已训练的BiGRU模型。</span></span><br><span class="line"><span class="string">      &#x27;&#x27;&#x27;</span></span><br><span class="line">      fw_sample_outputs, bw_sample_outputs = self.lm_model.sample_n(<span class="string">&#x27;random&#x27;</span>, batch,</span><br><span class="line">                          max_sample_length=max_sample_length,sample_num=self.sample_num)</span><br><span class="line">          </span><br><span class="line">      <span class="comment"># the number of samples to be drawn for SOC. Smaller to be faster and larger to be better.</span></span><br><span class="line">      <span class="keyword">for</span> sample_i <span class="keyword">in</span> <span class="built_in">range</span>(self.sample_num + extra):</span><br><span class="line">          <span class="keyword">if</span> sample_i == self.sample_num:</span><br><span class="line">              <span class="comment"># add itself</span></span><br><span class="line">              filled_inp = copy.copy(inp)</span><br><span class="line">          <span class="keyword">else</span>:</span><br><span class="line">              <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">              fw_sample_seq和bw_sample_seq分别对应group identifier的后上下文，和前上下文</span></span><br><span class="line"><span class="string">              &#x27;&#x27;&#x27;</span></span><br><span class="line">              fw_sample_seq, bw_sample_seq = fw_sample_outputs[:, sample_i].cpu().numpy(), \</span><br><span class="line">                                             bw_sample_outputs[:, sample_i].cpu().numpy()</span><br><span class="line">		...</span><br><span class="line">              len_bw = x_region[<span class="number">0</span>] - nb_region[<span class="number">0</span>]</span><br><span class="line">              len_fw = nb_region[<span class="number">1</span>] - x_region[<span class="number">1</span>]				</span><br><span class="line">              <span class="comment">#将采样的上下文替换原文的上下文</span></span><br><span class="line">              <span class="keyword">if</span> len_bw &gt; <span class="number">0</span>:</span><br><span class="line">                  filled_inp[nb_region[<span class="number">0</span>]:x_region[<span class="number">0</span>]] = bw_sample_seq[-len_bw:]</span><br><span class="line">              <span class="keyword">if</span> len_fw &gt; <span class="number">0</span>:</span><br><span class="line">                  filled_inp[x_region[<span class="number">1</span>] + <span class="number">1</span>:nb_region[<span class="number">1</span>] + <span class="number">1</span>] = fw_sample_seq[:len_fw]</span><br><span class="line">          filled_inp_, mask_inp_ = [], []</span><br><span class="line">          <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">          这for循环，保留group identifier</span></span><br><span class="line"><span class="string">          &#x27;&#x27;&#x27;</span></span><br><span class="line">          <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(filled_inp)):</span><br><span class="line">              <span class="keyword">if</span> self.configs.keep_other_nw <span class="keyword">or</span> <span class="keyword">not</span> (i <span class="keyword">in</span> additional_mask <span class="keyword">and</span> <span class="keyword">not</span> x_region[<span class="number">0</span>] &lt;= i &lt;= x_region[<span class="number">1</span>]):</span><br><span class="line">                  filled_inp_.append(filled_inp[i])</span><br><span class="line">                  mask_inp_.append(inp_mask[i])</span><br><span class="line">              <span class="keyword">else</span>:</span><br><span class="line">                  filled_inp_.append(self.tokenizer.vocab[<span class="string">&#x27;[PAD]&#x27;</span>])</span><br><span class="line">                  mask_inp_.append(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">          filled_ex, mask_ex = [], []          </span><br><span class="line">          <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">          这个for循环，pad neureal_word</span></span><br><span class="line"><span class="string">          &#x27;&#x27;&#x27;</span></span><br><span class="line">          <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(filled_inp)):</span><br><span class="line">              <span class="keyword">if</span> <span class="keyword">not</span> x_region[<span class="number">0</span>] &lt;= i &lt;= x_region[<span class="number">1</span>] <span class="keyword">and</span> (i <span class="keyword">not</span> <span class="keyword">in</span> additional_mask <span class="keyword">or</span> self.configs.keep_other_nw):</span><br><span class="line">                  <span class="comment">#不是中性词</span></span><br><span class="line">                  filled_ex.append(filled_inp[i])</span><br><span class="line">                  mask_ex.append(inp_mask[i])</span><br><span class="line">              <span class="keyword">else</span>:</span><br><span class="line">                  <span class="keyword">if</span> self.configs.keep_other_nw:</span><br><span class="line">                      filled_ex.append(self.tokenizer.vocab[<span class="string">&#x27;[PAD]&#x27;</span>])</span><br><span class="line">                      mask_ex.append(<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">.....</span><br><span class="line"></span><br><span class="line">      <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">      	计算对应的socre</span></span><br><span class="line"><span class="string">      </span></span><br><span class="line"><span class="string">      &#x27;&#x27;&#x27;</span></span><br><span class="line">      logits_enb = self.model(inp_enb, segment_ids[:, :inp_enb.size(<span class="number">1</span>)], inp_enb_mask)</span><br><span class="line">      logits_ex = self.model(inp_ex, segment_ids[:, :inp_ex.size(<span class="number">1</span>)], inp_ex_mask)</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> <span class="built_in">type</span>(logits_enb) <span class="keyword">is</span> <span class="built_in">tuple</span>:</span><br><span class="line">          logits_enb = logits_enb[<span class="number">0</span>]</span><br><span class="line">          logits_ex = logits_ex[<span class="number">0</span>]</span><br><span class="line">          </span><br><span class="line">      <span class="comment">#根据这个公式计算:φ(p) = Exδ[s(x) − s(x\p)，neureal_word 的socre</span></span><br><span class="line">      contrib_logits = logits_enb - logits_ex</span><br><span class="line">      contrib_score = contrib_logits[:, <span class="number">1</span>] - contrib_logits[:, <span class="number">0</span>]  <span class="comment"># [B]</span></span><br><span class="line"></span><br><span class="line">      contrib_score = contrib_score.mean()</span><br><span class="line"></span><br><span class="line">      <span class="keyword">if</span> <span class="keyword">not</span> return_variable:</span><br><span class="line">          <span class="keyword">return</span> contrib_score.item()</span><br><span class="line">      <span class="keyword">else</span>:</span><br><span class="line">          <span class="keyword">return</span> contrib_score</span><br></pre></td></tr></table></figure>
+<p>现在在看回<strong>compute_explanation_loss</strong>函数</p>
+<p>相应的梯度都累加完毕后，才最后进行梯度运算。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#Performs a single optimization step.</span></span><br><span class="line">optimizer.step()</span><br><span class="line"><span class="comment">#梯度清零</span></span><br><span class="line">optimizer.zero_grad()</span><br></pre></td></tr></table></figure>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2021-10-28</div>
+      <div class="popular-posts-title"><a href="2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/" rel="bookmark">Contextualizing Hate Speech Classifiers with Post-hoc explanation</a></div>
+        <div class="popular-posts-excerpt"><p><p>Author: Brendan Kennedy<br />
+Created Time: October 10, 2021 10:13 PM<br />
+Publisher: ACL<br />
+Quick Note: 利用SOC算法，计算phrase importance score。用这些score正则化group identifier使其接近于0，提升模型对group identifier上文的关注度。<br />
+Rate: ⭐⭐⭐⭐<br />
+Readed: No<br />
+Tags: 精读<br />
+Year: 2020<br />
+有源码吗: 有</p></p></div>
+    </li>
+  </ul>
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Code-Reading/" rel="tag"><i class="fa fa-tag"></i> Code Reading</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/" rel="prev" title="Contextualizing Hate Speech Classifiers with Post-hoc explanation">
+                  <i class="fa fa-chevron-left"></i> Contextualizing Hate Speech Classifiers with Post-hoc explanation
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/" rel="next" title="Pre-Trained Models: Past, Present and Future">
+                  Pre-Trained Models: Past, Present and Future <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>

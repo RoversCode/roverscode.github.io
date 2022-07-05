@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="研究背景   12年到至今，深度神经网络广泛被应用于AI领域。  CNN,GNN,RNN,Attention NN等。  一个重要的难题是：缺少数据      因为数据集构建昂贵，且数据的需求量极大。因此一直到现在  如何在有限的标注数据上针对特定任务，训练有效的神经网络已经成为一个关键的研究问题。    解决数据集问题的一个关键是迁移学习(Transfer learning)：由人类可以从一两">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Pre-Trained Models: Past, Present and Future">
+<meta property="og:url" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="研究背景   12年到至今，深度神经网络广泛被应用于AI领域。  CNN,GNN,RNN,Attention NN等。  一个重要的难题是：缺少数据      因为数据集构建昂贵，且数据的需求量极大。因此一直到现在  如何在有限的标注数据上针对特定任务，训练有效的神经网络已经成为一个关键的研究问题。    解决数据集问题的一个关键是迁移学习(Transfer learning)：由人类可以从一两">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled1.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled2.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled3.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled4.png">
+<meta property="article:published_time" content="2021-11-02T13:44:05.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:32.970Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="Paper Reading">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled.png">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/","path":"2021/11/02/Pre-Trained-Models-Past-Present-and-Future/","title":"Pre-Trained Models: Past, Present and Future"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Pre-Trained Models: Past, Present and Future | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%A0%94%E7%A9%B6%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text"> 研究背景</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ptms-%E8%AE%AD%E7%BB%83%E8%83%8C%E6%99%AF"><span class="nav-number">1.1.</span> <span class="nav-text"> PTMs 训练背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#transfer-learning"><span class="nav-number">1.2.</span> <span class="nav-text"> Transfer Learning</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%91%E7%9D%A3%E9%A2%84%E8%AE%AD%E7%BB%83"><span class="nav-number">1.2.1.</span> <span class="nav-text"> 监督预训练</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E7%9B%91%E7%9D%A3%E9%A2%84%E8%AE%AD%E7%BB%83"><span class="nav-number">1.2.2.</span> <span class="nav-text"> 自监督预训练</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#transformer%E4%B9%8B%E5%90%8E%E7%9A%84ptms"><span class="nav-number">1.3.</span> <span class="nav-text"> Transformer之后的PTMs</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%89%8D%E4%BA%BA%E5%81%9A%E4%BA%86%E5%93%AA%E4%BA%9B%E6%96%B9%E9%9D%A2%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-number">2.</span> <span class="nav-text"> 前人做了哪些方面的工作</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gpt"><span class="nav-number">2.1.</span> <span class="nav-text"> GPT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#bert"><span class="nav-number">2.2.</span> <span class="nav-text"> BERT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#roberta-and-albert"><span class="nav-number">2.3.</span> <span class="nav-text"> RoBERTa  and ALBERT</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#roberta"><span class="nav-number">2.3.1.</span> <span class="nav-text"> RoBERTa</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#albert"><span class="nav-number">2.4.</span> <span class="nav-text"> ALBERT</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96ptms"><span class="nav-number">2.5.</span> <span class="nav-text"> 其他PTMs</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#effective-architectures"><span class="nav-number">2.6.</span> <span class="nav-text"> Effective Architectures</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#unified-sequence-modeling"><span class="nav-number">2.7.</span> <span class="nav-text"> Unified Sequence Modeling</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#combining-autoregressive-and-autoencoding-modeling"><span class="nav-number">2.7.1.</span> <span class="nav-text"> Combining Autoregressive and Autoencoding Modeling</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#applying-generalized-encoder-decoder"><span class="nav-number">2.7.2.</span> <span class="nav-text"> Applying Generalized Encoder-Decoder</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cognitive-inspired-architectures"><span class="nav-number">2.8.</span> <span class="nav-text"> Cognitive-Inspired Architectures</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E5%B7%A5%E4%BD%9C"><span class="nav-number">2.9.</span> <span class="nav-text"> 其他工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#multilingual-pre-training"><span class="nav-number">2.10.</span> <span class="nav-text"> Multilingual Pre-Training</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#multimodal-pre-training"><span class="nav-number">2.11.</span> <span class="nav-text"> Multimodal Pre-Training</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#knowledge-enhanced-pre-training"><span class="nav-number">2.12.</span> <span class="nav-text"> Knowledge-Enhanced Pre-Training</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E5%8D%87%E8%AE%A1%E7%AE%97%E6%95%88%E7%8E%87"><span class="nav-number">2.13.</span> <span class="nav-text"> 提升计算效率</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#system-level-optimization"><span class="nav-number">2.13.1.</span> <span class="nav-text"> System-Level Optimization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#efficient-pre-training"><span class="nav-number">2.13.2.</span> <span class="nav-text"> Efficient Pre-Training</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#model-compression"><span class="nav-number">2.13.3.</span> <span class="nav-text"> Model Compression</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%AF%E8%A7%A3%E9%87%8A%E6%80%A7"><span class="nav-number">2.14.</span> <span class="nav-text"> 可解释性</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#knowledge-of-ptms"><span class="nav-number">2.14.1.</span> <span class="nav-text"> Knowledge of PTMs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#robustness-of-ptms"><span class="nav-number">2.14.2.</span> <span class="nav-text"> Robustness of PTMs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#structural-sparsity-of-ptms"><span class="nav-number">2.14.3.</span> <span class="nav-text"> Structural Sparsity of PTMs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#theoretical-analysis-of-ptms"><span class="nav-number">2.14.4.</span> <span class="nav-text"> Theoretical Analysis of PTMs</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E8%BF%98%E5%AD%98%E5%9C%A8%E5%93%AA%E4%BA%9B%E9%97%AE%E9%A2%98%E6%9C%89%E5%BE%85%E8%A7%A3%E5%86%B3"><span class="nav-number">3.</span> <span class="nav-text"> 还存在哪些问题有待解决</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#architectures-and-pre-training-methods"><span class="nav-number">3.1.</span> <span class="nav-text"> Architectures and Pre-Training Methods</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#multilingual-and-multimodal-pre-training"><span class="nav-number">3.2.</span> <span class="nav-text"> Multilingual and Multimodal Pre-Training</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#computational-efficiency"><span class="nav-number">3.3.</span> <span class="nav-text"> Computational Efficiency</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#theoretical-foundation"><span class="nav-number">3.4.</span> <span class="nav-text"> Theoretical Foundation</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#modeledge-learning"><span class="nav-number">3.5.</span> <span class="nav-text"> Modeledge Learning</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cognitive-and-knowledgeable-learning"><span class="nav-number">3.6.</span> <span class="nav-text"> Cognitive and Knowledgeable Learning</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#applications"><span class="nav-number">3.7.</span> <span class="nav-text"> Applications</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Pre-Trained Models: Past, Present and Future | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Pre-Trained Models: Past, Present and Future
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-11-02 21:44:05" itemprop="dateCreated datePublished" datetime="2021-11-02T21:44:05+08:00">2021-11-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:32" itemprop="dateModified" datetime="2022-07-02T13:08:32+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Paper-Reading/" itemprop="url" rel="index"><span itemprop="name">Paper Reading</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Paper-Reading/Deep-Learning/" itemprop="url" rel="index"><span itemprop="name">Deep Learning</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/" class="post-meta-item leancloud_visitors" data-flag-title="Pre-Trained Models: Past, Present and Future" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/11/02/Pre-Trained-Models-Past-Present-and-Future/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>12k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>11 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="研究背景"><a class="markdownIt-Anchor" href="#研究背景"></a> 研究背景</h1>
+<ul>
+<li>
+<p>12年到至今，深度神经网络广泛被应用于AI领域。</p>
+<ul>
+<li>CNN,GNN,RNN,Attention NN等。
+<ul>
+<li>一个重要的难题是：<strong>缺少数据</strong></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>因为数据集构建昂贵，且数据的需求量极大。因此一直到现在</p>
+<ul>
+<li><strong>如何在有限的标注数据上针对特定任务，训练有效的神经网络已经成为一个关键的研究问题。</strong></li>
+</ul>
+</li>
+<li>
+<p>解决数据集问题的一个关键是迁移学习(Transfer learning)：由人类可以从一两个样本学习识别新样本的事实得到启发。分为两个阶段</p>
+<ul>
+<li>预训练(pre-training)阶段：在从<strong>一个或多个任务从捕获知识</strong></li>
+<li>微调(fine-tuning)阶段：微调阶段<strong>迁移已捕获的知识</strong>到目标任务。</li>
+</ul>
+<blockquote>
+<p>毫无疑问，在深度学习的时代，迁移学习<strong>引爆了</strong>pre-trained model（PTM）的第一朵浪花。在这一朵浪花中，几乎所有的CV任务都用到了PTM。NLP也意识到了PTM的潜力，开始将PTM发展到NLP任务。</p>
+</blockquote>
+</li>
+</ul>
+<span id="more"></span>
+<ul>
+<li>
+<p>NLP领域采用**<em>self-supervised learning</em>(自监督)**去充分利用大规模无标注数据，给NLP任务提供各种通用语言学知识。动机是：<em>利用文本的内在相关性</em>。</p>
+<ul>
+<li>很长的一段时间，因为梯度爆炸和梯度消失的原因。在CV领域用PTM激流勇进的时候，NLP领域知识用预训练的浅层网络去捕获一个词的语义信息，比如***Word2Vec，Glove***等。
+<ul>
+<li>但是这种一个词只有一个密集向量表示有一个极大的限制是无法解决一次多义问题。而这种问题恰恰非常常见。***所以后面促使预训练RNN去提高上下文的word embedding。***但是这些模型的性能仍受限于模型大小和深度。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>随着深度神经网络在NLP领域的发展，直到Transformers的引入，使NLP任务训练非常深的神经网络模型成为了可能。</p>
+<ul>
+<li>
+<p><em><strong>用Transformers作为架构，语言模型学习作为目标，深度预训练模型GPT, BERT在2018年被提出来。</strong></em></p>
+</li>
+<li>
+<p>通过少量样本，微调大范围的PTMs,在NLP的下游任务带来令人惊叹的性能。如下图。<strong>在language understanding和language generation tasks中，GLUE甚至超过了人类。</strong></p>
+<img src="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled.png" class="" title="This is example">
+</li>
+<li>
+<p>在NLP的所有努力车成就，让large scale PTMs成为了AI研究的焦点。</p>
+</li>
+</ul>
+</li>
+<li>
+<p>所有直到现在，无论是对于NLP还是CV,针对特定的AI任务，微调Large-scale PTMs已经成为共识。</p>
+<ul>
+<li>在2020年有着数千亿参数的GPT3出现，让我们得以窥见分布在海量模型参数中的潜在力量，***特别是像人类一样强大了few-shot learning能力。***（说实话我也觉得很离谱。看下图)</li>
+</ul>
+<img src="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled1.png" class="" title="This is example">
+</li>
+<li>
+<p>虽然large scale PTMs如此强大，但是还有几个基础性问题存在</p>
+<ul>
+<li>我们仍不清楚隐藏在大量模型参数的本质。</li>
+<li>训练large scale PTMs这头巨兽所需要的计算代价过于昂贵。</li>
+</ul>
+</li>
+</ul>
+<h2 id="ptms-训练背景"><a class="markdownIt-Anchor" href="#ptms-训练背景"></a> PTMs 训练背景</h2>
+<blockquote>
+<p>罗马不是一天建成的，PTMs也不是。所以这篇论文的作者trace PTMs的发展历史，描绘PTMs在AI范围内的位置。***这能让我们清楚的理解PTMs核心的研究问题。***这篇论文作者详细的介绍了各种最新PTM的细节。</p>
+</blockquote>
+<p>PTMs到至今可以分为三个时代</p>
+<ul>
+<li>监督预训练(Transfer Learning)</li>
+<li>自监督预训练</li>
+<li>Transformer出来后PTMs</li>
+</ul>
+<h2 id="transfer-learning"><a class="markdownIt-Anchor" href="#transfer-learning"></a> Transfer Learning</h2>
+<h3 id="监督预训练"><a class="markdownIt-Anchor" href="#监督预训练"></a> 监督预训练</h3>
+<p>在监督预训练的时代，迁移学习的这些方法首先对多个源任务的数据进行预训练模型，对知识进行预编码，然后将预编码的知识转化为目标任务的训练模型。</p>
+<ul>
+<li>有两预训练方法被广泛的探索：特征迁移和参数迁移。
+<ul>
+<li>特征迁移方法预先训练有效的特征表示，对跨领域和任务的知识进行预编码。通过将这些预先训练过的特征表示注入到目标任务中，可以显著提高目标任务的模型性能。</li>
+<li>参数迁移方法遵循一个直觉的假设，即源任务和目标任务可以共享模型参数或先验超参数分布</li>
+</ul>
+</li>
+<li>因此，这些方法将知识预编码 into 共享的模型参数中，然后利用目标任务的数据对预训练参数进行微调，实现知识的转移。</li>
+<li>这两种预训练方法在一档程度上奠定了PTMs。在NLP中，Word Embedding被广泛作为NLP任务的输入，**建立了特征迁移的框架。**受此启发，<strong>CNNs也作为了CV领域最先进模型的基石。</strong></li>
+<li>所以近几年出名的PTMs也是基于representation  transfer(特征迁移)和parameter transfer（参数迁移)，例如ELMO 和BERT分别使用了特征迁移和参数迁移。</li>
+</ul>
+<p>自从AlexNet后，模型越来越深，越来越大。<strong>带来梯度爆炸和梯度消失问题</strong>。除了梯度问题之外，<strong>模型的性能也会很快遇到天花板，此时如果继续模型深度，性能会快速下降。</strong>(残差网络极大的缓解了这个问题，还有Batch Normalization也在一定程度上解决这个问题）</p>
+<ul>
+<li>因为深度网络模型需要大量的数据，所以一些large-scale supervised datasets被建立。最具有代表性的就是ImageNet。</li>
+<li><em><strong>至此有了和ResNet，有了Informative Dataset，还有了成熟的Knowledge  Transfer Method，引爆了一波监督预训练的浪潮。</strong></em></li>
+</ul>
+<blockquote>
+<p>CV领得益于这波浪潮，各种各样得CV任务性能得到快速提升(图片识别，物体检测，图像分割等等等)，***NLPers看到PTMs在CV如此的成功，在2017年监督预训练模型CoVE被提出。***COvE采用机器翻译作为预训练目标，在预训练之后，源语言的encoder可以作为NLP下游任务的强大基石。</p>
+</blockquote>
+<h3 id="自监督预训练"><a class="markdownIt-Anchor" href="#自监督预训练"></a> 自监督预训练</h3>
+<blockquote>
+<p>自监督和无监督有着许多相似之处，它们都依赖于unlabeled data。但是无监督主要聚焦于detecting data patterns(clustering, community discovery 和anomaly deteciton)，<em>而自监督学习仍然处于监督学习的范式之中。</em></p>
+</blockquote>
+<p>显然，自监督学习的发展，为在大规模无监督数据中预训练提供了可能性。相比于CV在深度学习的时代用监督预训练作为基石而言，<em><strong>自监督预训练给NLP领域带了巨大的进步。</strong></em></p>
+<p>尽管监督预训练模型CoVE已经给NLP任务来个可喜的结果，但是在NLP领域要创建跟ImageNet一样大的标注数据集是几乎不可能。因为标注文本比起标注图片复杂得多。<em><strong>因此用自监督预训练去利用无监督数据成了NLP任务最好得选择。</strong></em></p>
+<blockquote>
+<p>其实，最近在PTMs取得令人震惊得突破，主要还是在NLP任务中。</p>
+</blockquote>
+<p>其实纵观这几年得NLP，可以清楚得看到。Word2Vec就是基于自监督训练得静态词向量，然后因为一词多义问题，又采用了sequence-level 神经模型去产生 context-aware word embeddings。都是用了自监督预训练，效果也是极好得。</p>
+<h2 id="transformer之后的ptms"><a class="markdownIt-Anchor" href="#transformer之后的ptms"></a> Transformer之后的PTMs</h2>
+<p>毫无疑问，自从处理序列数据得Transformer出世以来，NLP任务得的PTMs又进入了一个崭新的时代！<em><strong>这是因为不同于传统的CNN和RNN，Transformer的结构使训练更深层次的language model成为了可能！</strong></em></p>
+<blockquote>
+<p>以前的word-level PTMs输入作为specific NLP task的输入。<em><strong>而基于Transformer的PTMs可以作为specific NLP task模型的backbone(骨干)。</strong></em></p>
+</blockquote>
+<p>到目前为之，基于Transformer的PTMs已经在大多数的NLP tasks刷榜了。受GPT和BERT的启发，<em><strong>XLNET,RoBERTa,BART和T5被相继提出。<em><strong>所以使用基于Transformer的PTMs作为模型的backbone已经成为了NLP tasks的标准程序</strong></em>。</strong></em></p>
+<p>Transformer-based multimodal PTMs(基于Transformer的多模态预训练模型)也在2019就被提出了，还取得了不错结果(promising results 这个词我也纠结要怎么翻译成中文- -)。</p>
+<blockquote>
+<p>历史总是来来回回，所以CV领域看到self-supervised和Transformer在NLP如此的成功，也开始探索如何将自监督学习和Transformer搬到CV任务。<em><strong>在上一个监督预训练的浪潮之后，自监督预训练成为了当前AI研究的浪潮。</strong></em></p>
+</blockquote>
+<h1 id="前人做了哪些方面的工作"><a class="markdownIt-Anchor" href="#前人做了哪些方面的工作"></a> 前人做了哪些方面的工作</h1>
+<blockquote>
+<p>Transformer结构的具体公式和效果，可以参考<a target="_blank" rel="noopener" href="https://luweikxy.gitbook.io/machine-learning-notes/self-attention-and-transformer">Self-Attention和Transformer - machine-learning-notes (gitbook.io)</a> 写得非常好!</p>
+</blockquote>
+<h2 id="gpt"><a class="markdownIt-Anchor" href="#gpt"></a> GPT</h2>
+<p>GPT是第一个结合Transformer架构和自监督预训练的PTM</p>
+<blockquote>
+<p>用的是Transformer的decoder，但是cross attention被移除</p>
+</blockquote>
+<p>GPT几乎在全部的NLP任务中，取得了进步。(natural language inference, question answering, commonsense reasoning, semantic similarity and classification.)。GPT通过将目标词之前的word作文上下，最大化所有word的条件概率。如下图所示：<em><strong>对于每个单词，GPT通过对其前面的单词使用masked multi-head self-attention来计算目标词的概率分布。</strong></em></p>
+<img src="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled2.png" class="" title="This is example">
+<blockquote>
+<p>不难理解，因为在Transformer的decoder，输入是要右移一位的。相当于mask了。</p>
+</blockquote>
+<p>文章还用了公式说明，由tokens <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="script">X</mi><mo>=</mo><mo stretchy="false">{</mo><msub><mi>x</mi><mn>0</mn></msub><mo separator="true">,</mo><msub><mi>x</mi><mn>1</mn></msub><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><msub><mi>x</mi><mi>n</mi></msub><mo separator="true">,</mo><msub><mi>x</mi><mi>n</mi></msub><mo>+</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{X}=\{x_0,x_1,....,x_n,x_n+1\}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">.</span><span class="mord">.</span><span class="mord">.</span><span class="mord">.</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">}</span></span></span></span>组成的corpus，GPT通过最大化log-likelihood(对数似然)优化language model。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mtable width="100%"><mtr><mtd width="50%"></mtd><mtd><mrow><mi mathvariant="script">L</mi><mo stretchy="false">(</mo><mi mathvariant="script">X</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></munderover><mi>l</mi><mi>o</mi><mi>g</mi><mi>P</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mi mathvariant="normal">∣</mi><msub><mi>x</mi><mrow><mi>i</mi><mo>−</mo><mi>k</mi></mrow></msub><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><msub><mi>x</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo separator="true">;</mo><mi>Θ</mi><mo stretchy="false">)</mo></mrow></mtd><mtd width="50%"></mtd><mtd><mtext>(1)</mtext></mtd></mtr></mtable><annotation encoding="application/x-tex">\tag{1} \mathcal{L}(\mathcal{X})=\sum_{i=1}^{n+1}logP(x_i|x_{i-k},...,x_{i-1};\varTheta)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathcal">L</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:3.0787820000000004em;vertical-align:-1.277669em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.8011130000000004em;"><span style="top:-1.872331em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.050005em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.300005em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">n</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mbin mtight">−</span><span class="mord mathdefault mtight" style="margin-right:0.03148em;">k</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.208331em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">.</span><span class="mord">.</span><span class="mord">.</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.311664em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mbin mtight">−</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.208331em;"><span></span></span></span></span></span></span><span class="mpunct">;</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathit">Θ</span></span><span class="mclose">)</span></span><span class="tag"><span class="strut" style="height:3.0787820000000004em;vertical-align:-1.277669em;"></span><span class="mord text"><span class="mord">(</span><span class="mord"><span class="mord">1</span></span><span class="mord">)</span></span></span></span></span></span></p>
+<p>其中,<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.03148em;">k</span></span></span></span>是窗口大小(这里是句子长度)。<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>x</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">x_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>是special token [CLS]，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow><annotation encoding="application/x-tex">x_{n+1}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.638891em;vertical-align:-0.208331em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.301108em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">n</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.208331em;"><span></span></span></span></span></span></span></span></span></span>是special token [SEP]。</p>
+<p><em><strong>在fine-tuning阶段，将input sequnence传递给GPT,得到最后一个block输出的输出的向量，然后可以接一个线性层，输出的单元数是词典的size。</strong></em></p>
+<blockquote>
+<p>GPT有数亿的参数，作为NLP历史上的第一个&quot;large-scale&quot; PTM，它在8块GPU训练了一个月！！！因为GPT成功为随后的一系列大规模PTMs的兴起铺平了道路。</p>
+</blockquote>
+<h2 id="bert"><a class="markdownIt-Anchor" href="#bert"></a> BERT</h2>
+<p>BERT的出现，也极大的促进了PTM领域的发展。理论上，相对于GPT，BERT使用了双向深度Transformer作为主要结构。同样将其使用到specific tasks，也需要pre-training 和 fine-tuning两个阶段。</p>
+<p>如上图Figure 7所示的那样，BERT使用的是Masked Langugae Modeling。用special token [MASK]随机mask token(在论文是有策略的)。<em><strong>训练目标是预测在上下文中masked positions地方应该出现什么词</strong></em>。就是这样，BERT是bidirectional的。</p>
+<p>同样论文中给出了公式说明，假设 tokens <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="script">X</mi><mo>=</mo><mo stretchy="false">{</mo><msub><mi>x</mi><mn>0</mn></msub><mo separator="true">,</mo><msub><mi>x</mi><mn>1</mn></msub><mo separator="true">,</mo><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mi mathvariant="normal">.</mi><mo separator="true">,</mo><msub><mi>x</mi><mi>n</mi></msub><mo separator="true">,</mo><msub><mi>x</mi><mi>n</mi></msub><mo>+</mo><mn>1</mn><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{X}=\{x_0,x_1,....,x_n,x_n+1\}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord">.</span><span class="mord">.</span><span class="mord">.</span><span class="mord">.</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.151392em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">n</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">}</span></span></span></span>组成了corpus。BERT随机masks <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">m</span></span></span></span> 个token in <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="script">X</mi></mrow><annotation encoding="application/x-tex">\mathcal{X}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span></span></span></span>，然后最大化下述公式的对数似然。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mtable width="100%"><mtr><mtd width="50%"></mtd><mtd><mrow><mi mathvariant="script">L</mi><mo stretchy="false">(</mo><mi mathvariant="script">X</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><mi>l</mi><mi>o</mi><mi>g</mi><mi>P</mi><mo stretchy="false">(</mo><mo stretchy="false">[</mo><mi>M</mi><mi>a</mi><mi>s</mi><mi>k</mi><msub><mo stretchy="false">]</mo><mi>i</mi></msub><mo>=</mo><msub><mi>y</mi><mi>i</mi></msub><mi mathvariant="normal">∣</mi><mover accent="true"><mi mathvariant="script">X</mi><mo>^</mo></mover><mo separator="true">;</mo><mi>Θ</mi><mo stretchy="false">)</mo></mrow></mtd><mtd width="50%"></mtd><mtd><mtext>(2)</mtext></mtd></mtr></mtable><annotation encoding="application/x-tex">\tag{2} \mathcal{L}(\mathcal{X})=\sum_{i=1}^mlogP([Mask]_i=y_i|\hat{\mathcal{X}};\varTheta)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathcal">L</span></span><span class="mopen">(</span><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.929066em;vertical-align:-1.277669em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.6513970000000002em;"><span style="top:-1.872331em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">i</span><span class="mrel mtight">=</span><span class="mord mtight">1</span></span></span></span><span style="top:-3.050005em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span><span style="top:-4.3000050000000005em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">m</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.277669em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mopen">[</span><span class="mord mathdefault" style="margin-right:0.10903em;">M</span><span class="mord mathdefault">a</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.03148em;">k</span><span class="mclose"><span class="mclose">]</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.19677em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9467699999999999em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span></span></span><span style="top:-3.25233em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.16666em;">^</span></span></span></span></span></span><span class="mpunct">;</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathit">Θ</span></span><span class="mclose">)</span></span><span class="tag"><span class="strut" style="height:2.929066em;vertical-align:-1.277669em;"></span><span class="mord text"><span class="mord">(</span><span class="mord"><span class="mord">2</span></span><span class="mord">)</span></span></span></span></span></span></p>
+<p>其中,<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mover accent="true"><mi mathvariant="script">X</mi><mo>^</mo></mover></mrow><annotation encoding="application/x-tex">\hat{\mathcal{X}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9467699999999999em;vertical-align:0em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9467699999999999em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span></span></span><span style="top:-3.25233em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.16666em;">^</span></span></span></span></span></span></span></span></span>是<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="script">X</mi></mrow><annotation encoding="application/x-tex">\mathcal{X}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord"><span class="mord mathcal" style="margin-right:0.14643em;">X</span></span></span></span></span> masked 后的状态，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mo stretchy="false">[</mo><mi>M</mi><mi>a</mi><mi>s</mi><mi>k</mi><msub><mo stretchy="false">]</mo><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">[Mask]_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord mathdefault" style="margin-right:0.10903em;">M</span><span class="mord mathdefault">a</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.03148em;">k</span><span class="mclose"><span class="mclose">]</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>是第<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.65952em;vertical-align:0em;"></span><span class="mord mathdefault">i</span></span></span></span>个masked postion，然后<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>y</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">y_i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.19444em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.31166399999999994em;"><span style="top:-2.5500000000000003em;margin-left:-0.03588em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>就是对应位置的词了。</p>
+<p>除了MLM的预训练objective之外，还有一个objective是next sentence prediction(NSP)，预测两个句子是否是连贯的。显然，NSP是一个二分类。***在预训练阶段，MLM和NSP是一起优化BERT的参数的。***具体看Figure 8所示。</p>
+<blockquote>
+<p>之所以要有这个任务，是因为一些NLP的下游任务，比如natural language inference和question answering有着多个句子的信息。</p>
+</blockquote>
+<img src="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled3.png" class="" title="This is example">
+<p>***不难看出，只要修改下游任务的数据的输出和输入，我们就可以用BERT微调任何的NLP任务。***在输入中两个句子串联处有一个special token [SEP]，它可以表示</p>
+<ol>
+<li>sentence pairs in paraphrase(原文中的句子对)</li>
+<li>hppotheses-premise pairs  in entailment(推理)</li>
+<li>quention-paggage pairs in question answering</li>
+<li>a single sentence for text classification or sequence tagging(序列标注)</li>
+</ol>
+<p><em><strong>对于输出，BERT会产生每一个token的representation，可以帮助处理sequence tagging 或者question answering等。这都很直觉。special token <span class="katex"><span class="katex-mathml"><math><semantics><mrow><mtext>[CLS]</mtext></mrow><annotation encoding="application/x-tex">\text{[CLS]}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord">[CLS]</span></span></span></span></span> 的 representation可以喂给额外的层去分类。</strong></em></p>
+<h2 id="roberta-and-albert"><a class="markdownIt-Anchor" href="#roberta-and-albert"></a> RoBERTa  and ALBERT</h2>
+<p>在GPT和BERT被提出后，一些它们的改善模型被提出，比如***RoBERTa*** 和 <em><strong>ALBERT</strong></em>。</p>
+<h3 id="roberta"><a class="markdownIt-Anchor" href="#roberta"></a> RoBERTa</h3>
+<p>是BERT的变体，相对BERT。RoBERTa有了四个简单有效的改变:</p>
+<ol>
+<li>移除了NSP任务</li>
+<li>更多训练步骤，数据更多，batch size更大</li>
+<li>训练更长的句子</li>
+<li>动态的改变<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mtext>[MASK]</mtext></mrow><annotation encoding="application/x-tex">\text{[MASK]}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord text"><span class="mord">[MASK]</span></span></span></span></span>模式</li>
+</ol>
+<p><em><strong>RoBERTa的作者们指出NSP  task对于BERT来说并没有太大作用。</strong></em></p>
+<h2 id="albert"><a class="markdownIt-Anchor" href="#albert"></a> ALBERT</h2>
+<p>是另外一个BERT的变体。它在减少参数取得了进展。</p>
+<ol>
+<li>它将input word embedding分解成两个更小矩阵</li>
+<li><em><strong>它强制让所有的Transformer layers共享参数。</strong></em></li>
+<li>它提出了sentence order prediction(SOP)任务替代了BERT的NSP任务。</li>
+</ol>
+<p><em><strong>因为在减少了参数，所以ALBERT在微调和inference speed上更慢。</strong></em></p>
+<h2 id="其他ptms"><a class="markdownIt-Anchor" href="#其他ptms"></a> 其他PTMs</h2>
+<img src="/2021/11/02/Pre-Trained-Models-Past-Present-and-Future/Untitled4.png" class="" title="This is example">
+<p>如上图所示，除了***RoBERTa***和***ALBERT***外，近几年为了更好的capturing knowledge from unlabeled data各种各样的PTMs被提出。</p>
+<ul>
+<li>一些工作改善了模型的architectures，探索了新颖的预训练任务，例如***XLNet***(2019)，<em><strong>UniLM</strong></em>(2019)，<em><strong>MASS</strong></em>(2019)，<em><strong>SpanBERT</strong></em>(2020) 和 <em><strong>ELECTRA</strong></em>(2020)。</li>
+<li>incorporating rich data sources(整合丰富的数据源)也是一个重要的方向，例如利用multilingual corporas，knowledge graph 和images。</li>
+<li>因为模型的规模是PTMs成功的重要因素，一些研究者建立了数千亿参数量的巨大模型，比如GPT3，Switch Transformer(伴随着计算效率的优化)。因为模型变大了，计算效率的优化显得更重要了。</li>
+</ul>
+<h2 id="effective-architectures"><a class="markdownIt-Anchor" href="#effective-architectures"></a> Effective Architectures</h2>
+<p>Transformer-based PTMs成功之后，激发一系列用于自然语言和其他领域序列建模(modeling sequnces)的<strong>新颖架构。</strong></p>
+<p>一般来说，所有语言预训练的after-BERT Transformer architectures可以根据两种动机被分为</p>
+<ul>
+<li><em><strong>unified sequence modeling</strong></em>（统一序列建模)</li>
+<li><em><strong>cognitive-inspired architectures</strong></em> (认知启发架构)</li>
+</ul>
+<h2 id="unified-sequence-modeling"><a class="markdownIt-Anchor" href="#unified-sequence-modeling"></a> Unified Sequence Modeling</h2>
+<p>为什么NLP会如此具有挑战性？这个其实比较直觉，我们直接从日常生活就可体会语言的复杂性。总的来说，可以被分类三个流派。</p>
+<ol>
+<li>Natural language understanding
+<ol>
+<li>grammatical analysis  语法分析</li>
+<li>syntactic analysis 句式分析</li>
+<li>word/sentence/paragraph classification</li>
+<li>question answering</li>
+<li>factual/commonsense knowledge inference(事实/常识 推理) 等等.</li>
+</ol>
+</li>
+<li>Open-ended language generation（开放式语言生成)
+<ol>
+<li>dialog generation</li>
+<li>story generation</li>
+<li>data-to-text generation等等</li>
+</ol>
+</li>
+<li>Non-open-ended language generation
+<ol>
+<li>machine translation</li>
+<li>abstract summarizing (摘要)</li>
+<li>blank filling (填空)等等</li>
+</ol>
+</li>
+</ol>
+<h3 id="combining-autoregressive-and-autoencoding-modeling"><a class="markdownIt-Anchor" href="#combining-autoregressive-and-autoencoding-modeling"></a> Combining Autoregressive and Autoencoding Modeling</h3>
+<p>事实上，很多任务都是可以互相转化的。比如理解任务和生成任务，它们的边界是模糊的。<em><strong>所以有很多新颖的架构想要用一个PTM处理不同类型的language tasks。</strong></em></p>
+<p><strong>permutated language modeling</strong></p>
+<ul>
+<li><em><strong>BERT有两个问题，它直接忽略了token之间联系(mask策略)，第二，它在预训练的大部分输入都包含[mask]，与微调的真实数据存在差异。XLNet在预训练阶段通过permutating token’s oder 解决这个问题。然后使用自回归预测范式，赋予XLNetunderstanding和generation的能力。</strong></em></li>
+<li>另一个采用permutation language modeling是***MPNet(2020)，它修正了XLNet在预训练不知道句子长度，而在下游任务直到句子长度的差异。***</li>
+</ul>
+<p><strong>除了pertutaion language modeling，还有人提出multi-task training.</strong></p>
+<ul>
+<li>***UniLM提出将不同language modeling objective(单向，双向或者seq2seq)联合一起训练。***UniLM在问答和摘要取得很好的效果。</li>
+</ul>
+<p>近来，***GLM（2021）***提出了一个更精致的方法来集合AE和AR。</p>
+<ul>
+<li><strong>给模型variable-length masked span，而不是number of [mask]。</strong></li>
+<li><strong>GLM要求Transformer blodck 自回归的产生masked tokens。</strong></li>
+<li>为了保存 [MASK]'number的信息，<strong>提出了2D positional encoding strategy.</strong></li>
+</ul>
+<p>GLM是第一个在natural language understanding，conditional generation 还有unconditional generation等所有类型任务中同时实现最佳性能的模型。</p>
+<h3 id="applying-generalized-encoder-decoder"><a class="markdownIt-Anchor" href="#applying-generalized-encoder-decoder"></a> Applying Generalized Encoder-Decoder</h3>
+<p>在GLM之前，**<em>MASS(2019)<em><strong>解决了</strong>可变长度填空</em></em>问题。但是无法解决filling variable-length blanks。这个问题被***T5(2020)解决了。T5***用一个mask token，masking  a variable-length of span，并要求解码器回复整个mask序列。</p>
+<p>***BART（***2020）用truncation,deletion, replacement, shuffling and masking来破坏 source sequence，而不仅仅知识masking。</p>
+<h2 id="cognitive-inspired-architectures"><a class="markdownIt-Anchor" href="#cognitive-inspired-architectures"></a> <strong>Cognitive-Inspired Architectures</strong></h2>
+<p>事实上，人脑远比Attention复杂的多，想达到人类智能，还需要决策能力、逻辑推理能力、反实时推理能力（脑淫「如果当时…」的技能）。</p>
+<p>为了具备以上几种能力，需要模型有<strong>短时记忆与长期记忆</strong>，短时记忆用来决策和推理，长期记忆用来回忆事实和经验。</p>
+<p>像<em><strong>Transformer-XL***, <em><strong>CogQA</strong></em>, <strong><em>CogLTX<em><strong>这类模型，就是增加了</strong>Maintainable Working Memory</em></em>(不仅会记忆和组合，还会忘记</strong>)</strong>，通过样本维度的记忆提升长距离理解能力，实现推理；<em><strong>REALM</strong></em>, <em><strong>RAG***这类模型则是对语料、实体或者三元组进行记忆，具有***Sustainable</strong></em> <em><strong>Long-Term Memory</strong></em>，将信息提前编码，在需要的时候检索出来</em>*。**</p>
+<h2 id="其他工作"><a class="markdownIt-Anchor" href="#其他工作"></a> 其他工作</h2>
+<p>除了以上两条故事线，还有不少其他结构演进，比如：</p>
+<ul>
+<li>提升mask策略，如SpanBERT、百度ERNIR、NEZHA、WWM</li>
+<li>使用其他自监督目标，如ELECTRA</li>
+</ul>
+<h2 id="multilingual-pre-training"><a class="markdownIt-Anchor" href="#multilingual-pre-training"></a> Multilingual Pre-Training</h2>
+<p>BERT之前的跨语言学习主要有两种方法：</p>
+<ol>
+<li>参数共享，比如使用跨语言平行语料让模型可以同时学到不同知识</li>
+<li>学习语言无关的约束，将编码结偶为语言相关的部分和无关的部分</li>
+</ol>
+<p>有了预训练方法之后，我们就可以在不同语言进行预训练了。mBERT在Wiki数据上进行多语言的***MLM***，之后***XLM-R***用了更好的语料后表现有所提升。但这两个模型都没有利用平行语料，于是***XLM***同时利用了平行语料，在平行语料做MLM，利用另一个语言的知识预测mask token。</p>
+<p>后续研究还有<strong>Unicoder</strong>、<strong>ALM、InfoXLM</strong>、<strong>HICTL</strong>、<strong>ERNIE-M</strong>等，生成任务则有<strong>mBART</strong>、<strong>XNLG</strong>。</p>
+<h2 id="multimodal-pre-training"><a class="markdownIt-Anchor" href="#multimodal-pre-training"></a> Multimodal Pre-Training</h2>
+<p>人在学习知识的时候其实都是多模态的，比如还是小baby的时候我们会学习看图识字，把猫啊狗啊印到自己脑子里。</p>
+<p>多模态这个方向在去年火了一阵，比如VideoBERT、ViLBERT、VL-BERT等等。最近比较知名的就是OpenAI的DALLE和CLIP了，从CLIP的一些可视化研究中也可以看到数字和图像feature被很好的结合了起来，但image2text还是比text2image难不少，至今没看到亮眼的效果。</p>
+<h2 id="knowledge-enhanced-pre-training"><a class="markdownIt-Anchor" href="#knowledge-enhanced-pre-training"></a> Knowledge-Enhanced Pre-Training</h2>
+<p>预训练模型可以从大量语料中进行学习，但知识图谱、领域知识不一定能学到。</p>
+<p>对于这个问题可以有两种解决方案，一种是外挂型，把知识通过各种方法和文本一起输入进去，比如清华<strong>ERNIE</strong>、<strong>K-BERT</strong>，另一种是强迫型，在领域数据、结构化文本上精调，让模型记住这些知识，比如百度<strong>ERNIE</strong>、<strong>WWM</strong>。</p>
+<h2 id="提升计算效率"><a class="markdownIt-Anchor" href="#提升计算效率"></a> 提升计算效率</h2>
+<h3 id="system-level-optimization"><a class="markdownIt-Anchor" href="#system-level-optimization"></a> <strong>System-Level Optimization</strong></h3>
+<p>针对不同场景，优化策略是不一样的（可以参考**<a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzAxMTk4NDkwNw==&amp;mid=2247484953&amp;idx=1&amp;sn=9b9831d1616a5d546aeb28fd5f68be37&amp;chksm=9bb98f7dacce066b0831f9a28ec56f86ffc97be642229833bb1eb4d17534bd69967475c0ff0f&amp;token=1234957123&amp;lang=zh_CN#rd">这篇文章</a>**）：</p>
+<ul>
+<li>如果模型放得下，数据没那么多（百万内），单机就够了，速度提升可以用混合精度、提督检查点</li>
+<li>如果模型放得下，数据很多，可以用数据并行，但优化器的状态还是会被整个传递，ZeRO optimizer则可以将优化器状态进行切分</li>
+<li>模型放不下时，可以考虑模型并行，把矩阵运算切开，也可以用Pipeline并行方法，将模型不同层放在各个机器上，可以参考GPipe、TeraPipe</li>
+</ul>
+<h3 id="efficient-pre-training"><a class="markdownIt-Anchor" href="#efficient-pre-training"></a> <strong>Efficient Pre-Training</strong></h3>
+<p>对于训练效率的提升，也可以从两方面入手：</p>
+<ol>
+<li>改进训练方法：BERT只mask 15%的token，学习效率较低，ELECTRA则可以对所有token进行学习；另外大batch很难学，可以用warmup strategy；如果对不同层使用不同学习率、先学浅层再逐渐加深也有利于模型收敛</li>
+<li>提升结构效率：减小模型复杂度，增加稀疏性，比如Switch Transformers使用的Mix-of-experts</li>
+</ol>
+<h3 id="model-compression"><a class="markdownIt-Anchor" href="#model-compression"></a> <strong>Model Compression</strong></h3>
+<p>模型瘦身的方法也已经有很多了：</p>
+<ol>
+<li>参数共享：比如ALBERT那样共享所有层的参数</li>
+<li>模型剪枝：可以修剪head或者砍掉层</li>
+<li><strong><a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s?__biz=MzAxMTk4NDkwNw==&amp;mid=2247484929&amp;idx=1&amp;sn=58e1ef67d00e5b6d9ff6c5ba4968bfc0&amp;chksm=9bb98f65acce06735d3fb61f6e971b5b2c596fc8aac9efc961ded8c3b4f84ed5b45688210ce7&amp;token=1234957123&amp;lang=zh_CN#rd">知识蒸馏</a></strong></li>
+<li>模型量化：常用的是FP16，也可以缩减到8bits甚至是1、2bits，但低比特模型跟硬件强相关，很难泛化</li>
+</ol>
+<h2 id="可解释性"><a class="markdownIt-Anchor" href="#可解释性"></a> 可解释性</h2>
+<h3 id="knowledge-of-ptms"><a class="markdownIt-Anchor" href="#knowledge-of-ptms"></a> <strong>Knowledge of PTMs</strong></h3>
+<p>知识分为语言知识和世界知识，语言知识可以通过以下方法探测：</p>
+<ol>
+<li>Representation Probing：接一个线性层，通过下游任务探测表示中是否含有语言知识</li>
+<li>Representation Analysis：对表示进行统计分析</li>
+<li>Attention analysis：分析注意力矩阵</li>
+<li>Generation Analysis：预测单词或句子的分布，观察现象</li>
+</ol>
+<p>从一些研究中发现，PTMs可以学习到句法、语义、局部以及长距离信息。同时在句子级别的特征抽取上表现也更好。</p>
+<p>对于世界知识，可以设置一些任务来探查，已经有研究从PTMs中抽取出了三元组。</p>
+<h3 id="robustness-of-ptms"><a class="markdownIt-Anchor" href="#robustness-of-ptms"></a> <strong>Robustness of PTMs</strong></h3>
+<p>检验模型鲁棒性，可以设计对抗样本，比如同义词替换，现在更倾向于human-in-the-loop的方法来设计更自然的对抗样本。总的来说现在模型的鲁棒性表现仍然堪忧。</p>
+<h3 id="structural-sparsity-of-ptms"><a class="markdownIt-Anchor" href="#structural-sparsity-of-ptms"></a> <strong>Structural Sparsity of PTMs</strong></h3>
+<p>大型Transformer存在严重的过参数化，部分研究表明移除head反而得到更好的表现，一些head的注意力pattern也是相似的。也有研究正时去掉30-40%参数也不会影响表现，模型中可以找到表现相当的子结构。</p>
+<h3 id="theoretical-analysis-of-ptms"><a class="markdownIt-Anchor" href="#theoretical-analysis-of-ptms"></a> <strong>Theoretical Analysis of PTMs</strong></h3>
+<p>这部分主要探究为什么预训练可以work。有学者认为，预训练可以带来：</p>
+<ol>
+<li>better optimization：预训练是模型更接近全局最优</li>
+<li>better regularization：预训练带来更好的泛化能力</li>
+</ol>
+<p>也有研究通过对比学习的分析，猜测对比学习的loss是下游任务loss的上界，所以迁移到下游时可以有更低的loss。</p>
+<h1 id="还存在哪些问题有待解决"><a class="markdownIt-Anchor" href="#还存在哪些问题有待解决"></a> 还存在哪些问题有待解决</h1>
+<h2 id="architectures-and-pre-training-methods"><a class="markdownIt-Anchor" href="#architectures-and-pre-training-methods"></a> <strong>Architectures and Pre-Training Methods</strong></h2>
+<ol>
+<li>New Architectures：降低Transformer计算复杂度、适配更多终端设备、针对任务设计更适合的结构</li>
+<li>New Pre-Training Tasks：现在最有效的任务是MLM，但这个任务需要很深的网络，也更难收敛</li>
+<li>Beyond Fine-Tuning：现在对每个下游任务都要精调一个模型，能否统一成一个，再加上浅层进行任务适配？GPT-3的精调方式就是一个很好的尝试</li>
+<li>Reliability：提升鲁棒性、可解释性</li>
+</ol>
+<h2 id="multilingual-and-multimodal-pre-training"><a class="markdownIt-Anchor" href="#multilingual-and-multimodal-pre-training"></a> <strong>Multilingual and Multimodal Pre-Training</strong></h2>
+<ol>
+<li>More Modalities：视频、语音同样重要，但在这类数据上预训练的成本太大了，需要更有效的方法进行复杂模态的预训练</li>
+<li>More Insightful Interpretation：为什么加上图像work？单模态有什么缺陷？</li>
+<li>More Downstream Applications：现在多模态模型主要用于检索、生成，是否有更接近现实的应用？</li>
+<li>Transfer Learnin：多模态预训练无法学习隐性知识，比如在同声翻译中，需要先把语音转成文字，进行文字翻译后再转为语音，能否通过多模态、多语言PTMs一步到位？</li>
+</ol>
+<h2 id="computational-efficiency"><a class="markdownIt-Anchor" href="#computational-efficiency"></a> <strong>Computational Efficiency</strong></h2>
+<ol>
+<li>Data Movement：现在分布式很大的瓶颈在设备通信上，能否设计自动化的策略提升数据传递效率？</li>
+<li>Parallelism Strategies：模型并行、Pipeline并行都依赖网络结构和设备配置，能否有更自动的策略，减少人工设计成本？</li>
+<li>Large-Scale Training Tools, Wrappers and Plugins</li>
+</ol>
+<h2 id="theoretical-foundation"><a class="markdownIt-Anchor" href="#theoretical-foundation"></a> <strong>Theoretical Foundation</strong></h2>
+<ol>
+<li>Uncertainty：模型对预测过于自信，比如问“你的脚有几只眼睛？”这种问题也会回答，已经有研究在利用贝叶斯方法研究这个问题</li>
+<li>Generalization and Robustness：预训练为何能提升泛化性？如何提升鲁棒性？</li>
+</ol>
+<h2 id="modeledge-learning"><a class="markdownIt-Anchor" href="#modeledge-learning"></a> <strong>Modeledge Learning</strong></h2>
+<p>P.S. Modeledge指模型表示中蕴藏的知识。</p>
+<ol>
+<li>Knowledge-Aware Tasks：已经有研究证实PTMs中存储着知识，但如何更好的利用这些知识呢？</li>
+<li>Modeledge Storage and Management：如何对知识进行更好的存储和管理，在其他语料训练需要大量计算并避免灾难性遗忘，是否可以把不同模型的知识合并到一起？</li>
+</ol>
+<h2 id="cognitive-and-knowledgeable-learning"><a class="markdownIt-Anchor" href="#cognitive-and-knowledgeable-learning"></a> <strong>Cognitive and Knowledgeable Learning</strong></h2>
+<ol>
+<li>Knowledge Augmentation：如何利用更好的结构、预训练方法，把异构的知识融入到文本中？</li>
+<li>Knowledge Support：利用先验知识对数据进行处理，加速PTMs的训练和理解</li>
+<li>Knowledge Supervision：利用KG进行预训练</li>
+<li>Cognitive Architecture：更接近人脑的结构</li>
+<li>Explicit and Controllable Reasoning：增强复杂推理、多跳推理能力</li>
+<li>Interactions of Knowledge：PTMs内部是否把知识存储到了不同部分，它们是如何交互的？</li>
+</ol>
+<h2 id="applications"><a class="markdownIt-Anchor" href="#applications"></a> <strong>Applications</strong></h2>
+<ol>
+<li>Natural Language Generation：低资源生成</li>
+<li>Dialog Systems：为对话定制的预训练任务</li>
+<li>Domain-Specific PTMs：有更多领域知识的预训练模型</li>
+<li>Domain Adaptation and Task Adaptation：领域和任务数据总是较少的，对于大模型会欠拟合，如何更高效地精调？</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Paper-Reading/" rel="tag"><i class="fa fa-tag"></i> Paper Reading</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" rel="prev" title="ContexualizingHateSpeech源码阅读笔记">
+                  <i class="fa fa-chevron-left"></i> ContexualizingHateSpeech源码阅读笔记
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/11/04/Affective-Dependency-Graph-for-Sarcasm-Detection/" rel="next" title="Affective Dependency Graph for Sarcasm Detection">
+                  Affective Dependency Graph for Sarcasm Detection <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>

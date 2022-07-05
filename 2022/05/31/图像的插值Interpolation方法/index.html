@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="图片的插值Interpolation  💡 图像插值就是利用已知邻近像素点的灰度值（或rgb图像中的三色值）来产生未知像素点的灰度值，以便由原始图像再生出具有更高分辨率的图像。  出现的原因：  在图像处理中，几何变换是将一幅图像映射到另外一幅图像内的操作，可以大概分为放缩、翻转、仿射(平移、旋转)、透视、重映射几部分。在几何变换时，无法给有些像素点直接赋值，例如，将图像放大两倍，必然会多出一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="图像的插值Interpolation方法">
+<meta property="og:url" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="图片的插值Interpolation  💡 图像插值就是利用已知邻近像素点的灰度值（或rgb图像中的三色值）来产生未知像素点的灰度值，以便由原始图像再生出具有更高分辨率的图像。  出现的原因：  在图像处理中，几何变换是将一幅图像映射到另外一幅图像内的操作，可以大概分为放缩、翻转、仿射(平移、旋转)、透视、重映射几部分。在几何变换时，无法给有些像素点直接赋值，例如，将图像放大两倍，必然会多出一">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled1.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled2.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled3.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled4.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled5.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled6.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled7.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled8.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled9.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled10.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled11.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled12.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled13.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled14.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled15.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled16.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled17.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled18.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled19.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled20.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled21.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/v2-5112eceb8cbab980007ef7e2350c5756_720w.jpg">
+<meta property="article:published_time" content="2022-05-31T07:36:07.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:33.042Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="NoteBook">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled.png">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/","path":"2022/05/31/图像的插值Interpolation方法/","title":"图像的插值Interpolation方法"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>图像的插值Interpolation方法 | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%BE%E7%89%87%E7%9A%84%E6%8F%92%E5%80%BCinterpolation"><span class="nav-number">1.</span> <span class="nav-text"> 图片的插值Interpolation</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%BE%E5%83%8F%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95%E5%88%86%E7%B1%BB"><span class="nav-number">2.</span> <span class="nav-text"> 图像插值算法分类</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC"><span class="nav-number">3.</span> <span class="nav-text"> 线性插值</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%91%E9%82%BB%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95inter_nearest"><span class="nav-number">3.1.</span> <span class="nav-text"> 近邻插值算法(INTER_NEAREST)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%9D%E6%83%B3"><span class="nav-number">3.1.1.</span> <span class="nav-text"> 思想</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BE%8B%E5%AD%90%E8%AF%B4%E6%98%8E"><span class="nav-number">3.1.2.</span> <span class="nav-text"> 例子说明</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BC%BA%E7%82%B9"><span class="nav-number">3.1.3.</span> <span class="nav-text"> 缺点</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8C%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95inter_linear"><span class="nav-number">3.2.</span> <span class="nav-text"> 双线性插值算法(INTER_LINEAR)</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC-2"><span class="nav-number">3.2.1.</span> <span class="nav-text"> 线性插值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8C%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC"><span class="nav-number">3.2.2.</span> <span class="nav-text"> 双线性插值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8E%9F%E5%9B%BE%E5%83%8F%E5%92%8C%E7%9B%AE%E6%A0%87%E5%9B%BE%E5%83%8F%E7%9A%84%E5%87%A0%E4%BD%95%E4%B8%AD%E5%BF%83%E5%AF%B9%E9%BD%90"><span class="nav-number">3.2.3.</span> <span class="nav-text"> 原图像和目标图像的几何中心对齐</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#cvresize%E7%9A%84%E8%AE%A1%E7%AE%97%E8%BF%87%E7%A8%8B"><span class="nav-number">3.3.</span> <span class="nav-text"> cv.resize()的计算过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97"><span class="nav-number">3.3.1.</span> <span class="nav-text"> 计算</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%89%E6%AC%A1%E6%A0%B7%E6%9D%A1%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95inter_cubic"><span class="nav-number">3.4.</span> <span class="nav-text"> 三次样条插值算法(INTER_CUBIC)</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%9D%9E%E7%BA%BF%E6%80%A7%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95"><span class="nav-number">4.</span> <span class="nav-text"> 非线性插值算法</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E5%B0%8F%E6%B3%A2%E5%8F%98%E6%8D%A2%E7%9A%84%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text"> 基于小波变换的插值算法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E4%BA%8E%E8%BE%B9%E7%BC%98%E4%BF%A1%E6%81%AF%E7%9A%84%E6%8F%92%E5%80%BC"><span class="nav-number">4.2.</span> <span class="nav-text"> 基于边缘信息的插值</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9A%90%E5%BC%8F%E8%BE%B9%E7%BC%98%E6%8F%92%E5%80%BC%E7%AE%97%E6%B3%95%E4%B8%AD%E7%9A%84cgi%E7%AE%97%E6%B3%95"><span class="nav-number">4.2.1.</span> <span class="nav-text"> 隐式边缘插值算法中的CGI算法</span></a></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="图像的插值Interpolation方法 | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          图像的插值Interpolation方法
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-05-31 15:36:07" itemprop="dateCreated datePublished" datetime="2022-05-31T15:36:07+08:00">2022-05-31</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:33" itemprop="dateModified" datetime="2022-07-02T13:08:33+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Computer-Vision/" itemprop="url" rel="index"><span itemprop="name">Computer Vision</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Computer-Vision/Image-Processing/" itemprop="url" rel="index"><span itemprop="name">Image Processing</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/" class="post-meta-item leancloud_visitors" data-flag-title="图像的插值Interpolation方法" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2022/05/31/图像的插值Interpolation方法/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>4.2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="图片的插值interpolation"><a class="markdownIt-Anchor" href="#图片的插值interpolation"></a> 图片的插值Interpolation</h1>
+<aside>
+💡 图像插值就是利用已知邻近像素点的灰度值（或rgb图像中的三色值）来产生未知像素点的灰度值，以便由原始图像再生出具有更高分辨率的图像。
+</aside>
+<p>出现的原因：</p>
+<ul>
+<li>在图像处理中，几何变换是将一幅图像映射到另外一幅图像内的操作，可以大概分为<strong>放缩</strong>、翻<strong>转</strong>、<strong>仿射(平移、旋转)</strong>、<strong>透视</strong>、<strong>重映射</strong>几部分。在几何变换时，无法给有些像素点直接赋值，例如，将图像放大两倍，必然会多出一些无法被直接映射的像素点，对于这些像素点，通过插值决定它们的值。且不同插值方式的结果不同。</li>
+</ul>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled.png" class="" title="this is example">
+<span id="more"></span>
+<h1 id="图像插值算法分类"><a class="markdownIt-Anchor" href="#图像插值算法分类"></a> 图像插值算法分类</h1>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled1.png" class="" title="this is example">
+<p>主要可以分为两类，**一类是线性图像插值方法，另一类是非线性图像插值方法，**如上图所示。</p>
+<p>传统的线性插值方法</p>
+<ul>
+<li><strong>最近邻插值，双线性插值</strong>以及<strong>双三次插值</strong>等都属于**线性插值方法。<strong>这类插值方法在图像插值过程中</strong>采用同一种插值内核，不用考虑待插像素点所处的位置，**这种做法会使图像中的边缘变得模糊不清，达不到高清图像的视觉效果。</li>
+</ul>
+<p>非线性插法主要包括:</p>
+<ul>
+<li>基于小波系数的方法</li>
+<li>基于边缘信息的方法
+<ul>
+<li>显式方法</li>
+<li>隐式方法
+<ul>
+<li>边缘导向插值(New edge direactive interpolation,NEDI)</li>
+<li>最小均方误差估计插值(Linear minimum mean square-error estimation, LMMSE)</li>
+<li>软判决自适应插值(Soft-decision adaptive interpolation, SAI)</li>
+<li>边缘对比度引导插值(Contrast-guideed image interpolation,CGI)</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="线性插值"><a class="markdownIt-Anchor" href="#线性插值"></a> 线性插值</h1>
+<p>线性插值算法常用有五种，在<strong>OpenCV</strong>中设置可以通过相关参数很方便地进行设置。</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled2.png" class="" title="this is example">
+<h2 id="近邻插值算法inter_nearest"><a class="markdownIt-Anchor" href="#近邻插值算法inter_nearest"></a> 近邻插值算法(INTER_NEAREST)</h2>
+<h3 id="思想"><a class="markdownIt-Anchor" href="#思想"></a> 思想</h3>
+<p>将目标图像中的点，对应到原图像中后，找到最相邻的<strong>整数坐标点的像素值</strong>，作为该点的像素值输出。</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled3.png" class="" title="this is example">
+<p>如上图所示，目标图像中的某点投影到原图像中的位置为点P，与P距离最近的点为Q11，此时易知，f§=f(Q11)。</p>
+<h3 id="例子说明"><a class="markdownIt-Anchor" href="#例子说明"></a> 例子说明</h3>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled4.png" class="" title="this is example">
+<p>将一幅3<em>3图像放大到4</em>4，用f(x , y)表示原图像，h(x ,y)表示目标图像，我们有如下公式：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled5.png" class="" title="this is example">
+<h3 id="缺点"><a class="markdownIt-Anchor" href="#缺点"></a> 缺点</h3>
+<ul>
+<li>由最邻近插值法，放大后的图像有很严重的马赛克，会<strong>出现明显的块状效应</strong>；<strong>缩小后的图像有很严重的失真</strong>。</li>
+<li>这是一种最基本、最简单的图像缩放方式。变换后的每个像素点的像素值，只由原图像中的一个像素点确定。例如上面，点(0,0.75)的像素只由(0,1)确定，这样的效果显然不好。点(0,0.75)的像素不止和(0,1)有关，和(0,0)也有关，只是(0,1)的影响更大。如果可以用附近的几个像素点按权重分配，共同确定目标图像某点的像素，效果会更好。下面的双线性插值就解决了这个问题。</li>
+</ul>
+<h2 id="双线性插值算法inter_linear"><a class="markdownIt-Anchor" href="#双线性插值算法inter_linear"></a> 双线性插值算法(INTER_LINEAR)</h2>
+<h3 id="线性插值-2"><a class="markdownIt-Anchor" href="#线性插值-2"></a> 线性插值</h3>
+<p>**线性插值：使用连接两个已知量的直线来确定在这两个已知量之间的一个未知量的值。**线性插值形式：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>a</mi><mn>1</mn></msub><mi>x</mi><mo>+</mo><msub><mi>a</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">f(x)=a_1x+a_0
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.73333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathdefault">x</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.58056em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault">a</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled6.png" class="" title="this is example">
+<p>线性插值多项式：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled7.png" class="" title="this is example">
+<p>其实，即使x不在x0到x1之间，这个公式也是成立的。在这种情况下，这种方法叫作线性外插。</p>
+<h3 id="双线性插值"><a class="markdownIt-Anchor" href="#双线性插值"></a> 双线性插值</h3>
+<p>双线性插值形式：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mi>a</mi><mi>x</mi><mo>+</mo><mi>b</mi><mi>y</mi><mo>+</mo><mi>c</mi><mi>x</mi><mi>y</mi><mo>+</mo><mi>d</mi></mrow><annotation encoding="application/x-tex">f(x,y)=ax+by+cxy+d
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.66666em;vertical-align:-0.08333em;"></span><span class="mord mathdefault">a</span><span class="mord mathdefault">x</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">b</span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.7777700000000001em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">c</span><span class="mord mathdefault">x</span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">d</span></span></span></span></span></p>
+<p><strong>双线性插值是线性插值在二维时的推广,在两个方向上共做了三次线性插值。</strong><br />
+定义了一个双曲抛物面与四个已知点拟合。</p>
+<p>具体操作为在X方向上进行两次线性插值计算，然后在Y方向上进行一次插值计算。如下图所示：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled8.png" class="" title="this is example">
+<p>首先，f(x,y)为二元函数，假设我们知道f(x0,y0),f(x1,y1),f(x0,y1),f(x1,y0)四个点的值。这四个点确定一个矩形，我们希望通过插值得到矩形内任意点的函数值。</p>
+<ul>
+<li>先在<strong>x</strong>方向上进行两次线性插值，得到：</li>
+</ul>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled9.png" class="" title="this is example">
+<ul>
+<li>再在<strong>y</strong>方向上进行一次线性插值，得到：</li>
+</ul>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled10.png" class="" title="this is example">
+<ul>
+<li>综合起来</li>
+</ul>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled11.png" class="" title="this is example">
+<h3 id="原图像和目标图像的几何中心对齐"><a class="markdownIt-Anchor" href="#原图像和目标图像的几何中心对齐"></a> 原图像和目标图像的几何中心对齐</h3>
+<p>在计算缩小或者放大的目标图像中，对应原图像的虚拟坐标点时，一般的变换时：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mi>r</mi><mi>c</mi><mi>X</mi><mo>=</mo><mi>d</mi><mi>s</mi><mi>t</mi><mi>X</mi><mo stretchy="false">(</mo><mi>s</mi><mi>r</mi><msub><mi>c</mi><mrow><mi>w</mi><mi>i</mi><mi>d</mi><mi>t</mi><mi>h</mi></mrow></msub><mi mathvariant="normal">/</mi><mi>d</mi><mi>s</mi><msub><mi>t</mi><mrow><mi>w</mi><mi>i</mi><mi>d</mi><mi>t</mi><mi>h</mi></mrow></msub><mo stretchy="false">)</mo><mspace linebreak="newline"></mspace><mi>s</mi><mi>r</mi><mi>c</mi><mi>Y</mi><mo>=</mo><mi>d</mi><mi>s</mi><mi>t</mi><mi>Y</mi><mo stretchy="false">(</mo><mi>s</mi><mi>r</mi><msub><mi>c</mi><mrow><mi>h</mi><mi>e</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub><mi mathvariant="normal">/</mi><mi>d</mi><mi>s</mi><msub><mi>t</mi><mrow><mi>h</mi><mi>e</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">srcX=dstX(src_{width}/dst_{width}) \\ srcY=dstY(src_{height}/dst_{height})
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mopen">(</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">/</span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span><span class="mspace newline"></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.036108em;vertical-align:-0.286108em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span><span class="mopen">(</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mord">/</span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></span></p>
+<p>这种变换下，<strong>原图像的有些点没有参与计算</strong>。</p>
+<blockquote>
+<p>举个例子，把<strong>9∗9</strong>的原图像缩小成<strong>3∗3</strong>，原图像的原点**(0,0)<strong>和目标图像的原点</strong>(0,0)**都为左上角，但是目标图像右上角的坐标为(0,2)，对应原图像的坐标为(0∗(9/3),2∗(9/3))=(0,6)。目标图像右边已经没有点了，(0,6)右边的像素点也就用不到了。</p>
+</blockquote>
+<p>原图像和目标图像的像素之间的对应关系如下：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled12.png" class="" title="this is example">
+<p>从图片可以看出，只有圈出来的红色部分参与运算了。目标图像的每个像素点的灰度值相对于原图像偏左上方，右下角的元素实际上没有参与运算。</p>
+<p><strong>为了让原图像和目标图像的中心对齐</strong>，规定另外一种变换方式：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mi>r</mi><mi>c</mi><mi>X</mi><mo>=</mo><mi>d</mi><mi>s</mi><mi>t</mi><mi>X</mi><mo stretchy="false">(</mo><mi>s</mi><mi>r</mi><msub><mi>c</mi><mrow><mi>w</mi><mi>i</mi><mi>d</mi><mi>t</mi><mi>h</mi></mrow></msub><mi mathvariant="normal">/</mi><mi>d</mi><mi>s</mi><msub><mi>t</mi><mrow><mi>w</mi><mi>i</mi><mi>d</mi><mi>t</mi><mi>h</mi></mrow></msub><mo stretchy="false">)</mo><mo>+</mo><mn>0.5</mn><mo stretchy="false">(</mo><mi>s</mi><mi>r</mi><msub><mi>c</mi><mrow><mi>w</mi><mi>i</mi><mi>d</mi><mi>t</mi><mi>h</mi></mrow></msub><mi mathvariant="normal">/</mi><mi>d</mi><mi>s</mi><msub><mi>t</mi><mrow><mi>w</mi><mi>i</mi><mi>d</mi><mi>t</mi><mi>h</mi></mrow></msub><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mspace linebreak="newline"></mspace><mi>s</mi><mi>r</mi><mi>c</mi><mi>Y</mi><mo>=</mo><mi>d</mi><mi>s</mi><mi>t</mi><mi>Y</mi><mo stretchy="false">(</mo><mi>s</mi><mi>r</mi><msub><mi>c</mi><mrow><mi>h</mi><mi>e</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub><mi mathvariant="normal">/</mi><mi>d</mi><mi>s</mi><msub><mi>t</mi><mrow><mi>h</mi><mi>e</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub><mo stretchy="false">)</mo><mo>+</mo><mn>0.5</mn><mo stretchy="false">(</mo><mi>s</mi><mi>r</mi><msub><mi>c</mi><mrow><mi>h</mi><mi>e</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub><mi mathvariant="normal">/</mi><mi>d</mi><mi>s</mi><msub><mi>t</mi><mrow><mi>h</mi><mi>e</mi><mi>i</mi><mi>g</mi><mi>h</mi><mi>t</mi></mrow></msub><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">srcX=dstX(src_{width}/dst_{width})+0.5(src_{width}/dst_{width}-1) \\ srcY=dstY(src_{height}/dst_{height})+0.5(src_{height}/dst_{height}-1)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mopen">(</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">/</span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">0</span><span class="mord">.</span><span class="mord">5</span><span class="mopen">(</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">/</span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">h</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span><span class="mspace newline"></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.036108em;vertical-align:-0.286108em;"></span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.22222em;">Y</span><span class="mopen">(</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mord">/</span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.036108em;vertical-align:-0.286108em;"></span><span class="mord">0</span><span class="mord">.</span><span class="mord">5</span><span class="mopen">(</span><span class="mord mathdefault">s</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord"><span class="mord mathdefault">c</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mord">/</span><span class="mord mathdefault">d</span><span class="mord mathdefault">s</span><span class="mord"><span class="mord mathdefault">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361079999999999em;"><span style="top:-2.5500000000000003em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">e</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight" style="margin-right:0.03588em;">g</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">t</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span></p>
+<p>这种变换下，<strong>目标图像的中心点(1,1)</strong>，<strong>对应了原图像的中心点(4,4)</strong>，<strong>两个图像的几何中心重合</strong>，能充分利用原图像的点，并且目标图像的每个像素点之间都是等间隔的，也都和两边有一定的边距。实际上，在openCv中也是这种变换方式。</p>
+<h2 id="cvresize的计算过程"><a class="markdownIt-Anchor" href="#cvresize的计算过程"></a> cv.resize()的计算过程</h2>
+<p>对于缩小图像，目标图像中每个点都能找到原图像中包围它的四个临近点，每个点都进行双线性插值即可。</p>
+<p>对于放大图像，边界附近的点经过坐标变换可能超出了原图像的范围。举个例子，把3∗3的原图像放大成4∗4。</p>
+<ul>
+<li><strong>中间的点：双线性插值</strong></li>
+</ul>
+<p>中间的点都能在原图像中找到包围它的四个临近点，做双线性插值即可。</p>
+<ul>
+<li><strong>边界上的点（除了顶点）：线性插值</strong></li>
+</ul>
+<p>例如，目标图像中的点(1,3)，对应原图像的点为(0.625,2.125)，原图像的纵坐标最大为2，找不到包围(0.625,2.125)四个点，所以用它最邻近的两个点(0,2)和(1,2)做线性插值（外插），得到目标图像中(1,3)的像素值。</p>
+<ul>
+<li><strong>四个顶点：最邻近插值</strong></li>
+</ul>
+<p>例如，目标图像右上角的顶点(0,3)，对于原图像的点为(0,2.125)，直接用原图像右上角的顶点(0,2)作为它的值即可。</p>
+<h3 id="计算"><a class="markdownIt-Anchor" href="#计算"></a> 计算</h3>
+<p>用h(x,y)表示目标图像，f(x,y)表示原图像</p>
+<ul>
+<li>
+<p>中间的点：双线性插值</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled13.png" class="" title="this is example">
+</li>
+<li>
+<p>边界上的点（除了顶点）：线性插值</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled14.png" class="" title="this is example">
+</li>
+<li>
+<p>四个顶点：最邻近插值</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled15.png" class="" title="this is example">
+</li>
+</ul>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled16.png" class="" title="this is example">
+<h2 id="三次样条插值算法inter_cubic"><a class="markdownIt-Anchor" href="#三次样条插值算法inter_cubic"></a> 三次样条插值算法(INTER_CUBIC)</h2>
+<p>给定n+1个点，a=x_0&lt;x_1&lt;…&lt;x_n=b，以及他们的函数值f(x_i)，i=0,1,2,…n上，确定一个三次多项式：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled17.png" class="" title="this is example">
+<p>每个三次多项式中有四个未知参数，有n个区间，n个多项式，共4n个未知参数。我们知道“n个未知数需要n个已知条件确定唯一解”，所以要确定这4n个未知参数，共需要4n个已知条件。</p>
+<p>每个三次多项式满足如下条件：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled18.png" class="" title="this is example">
+<p>以上共4n−2个条件，还差2个条件，由如下三种边界条件确定：</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled19.png" class="" title="this is example">
+<p>4n个条件有了，就可以确定每个区间上的三次多项式。对于每个区间内的点，就可以用Si(x)得到插值结果。三次样条插值具有良好的收敛性，稳定性和光滑性，优点明显，是非常重要的插值工具。</p>
+<h1 id="非线性插值算法"><a class="markdownIt-Anchor" href="#非线性插值算法"></a> 非线性插值算法</h1>
+<p>非线性插值算法主要有两大类，基于小波变换的插值算法，基于边缘信息的插值算法。</p>
+<h2 id="基于小波变换的插值算法"><a class="markdownIt-Anchor" href="#基于小波变换的插值算法"></a> 基于小波变换的插值算法</h2>
+<p>由于<strong>小波具有多分辨率分析功能和逐渐局部细化等性质</strong>，基于小波 的 插 值 方 法也 相 继 被 提 出。<strong>小 波 变 换 (ＤＷＴ)的基本思想就是将信号分解到不同的尺度或者分辨率层上，这样可以在不同的尺度上独立的对信号进行研究和分析。</strong></p>
+<p>正交小波分解不仅可将图像的高低频信息很好地分离，而且分解后各层子带之间具有相似性。<strong>分解后的低频信息中包含了图像的绝大部分能量；高频信息则对应图像的边缘信息。</strong></p>
+<p>如下图所示，通过小波变换，将图像的高低频信息分离后，<strong>可以单独对高频信息进行处理。若能准确地得到图像的高频细节，利用重构理论，将得到的高频与原有的低频相叠加，再通过离散小波逆变换就可以得到分辨率高一倍的图像。</strong></p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled20.png" class="" title="this is example">
+<h2 id="基于边缘信息的插值"><a class="markdownIt-Anchor" href="#基于边缘信息的插值"></a> 基于边缘信息的插值</h2>
+<p>由于边缘对人眼知觉系统的视觉重要性，有研究者提出了<strong>边缘引导的图像插值方法来对图像边缘进行放大</strong>。</p>
+<p>基于边缘信息的图像插值方法的<strong>核心思想是对非边缘像素点采用无方向的传统插值方法进行插值，而对于边缘像素点则采用有方向的插值方法。<strong>边缘像素及其</strong>方向判断</strong>的精准度对最后的图像插值结果有着决定性的影响。</p>
+<img src="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/Untitled21.png" class="" title="this is example">
+<p>上图给出的是显式边缘插值算法的示意图，其中黑色虚线是图像的真实边缘，灰色实线是边缘检测算法检测出的边缘。<strong>对于图中的灰色像素点的插值，需要确定其在边缘的哪一侧，然后利用该侧的已知像素点对其进行估算。</strong><br />
+由于图像边缘的连续性与数字图像离散性的冲突，<strong>将连续的边缘映射到离散的像素点上会产生较大的误差，而且沿着图像边缘插值不易实现，所以此类方法发展较慢。</strong></p>
+<h3 id="隐式边缘插值算法中的cgi算法"><a class="markdownIt-Anchor" href="#隐式边缘插值算法中的cgi算法"></a> <strong>隐式边缘插值算法中的CGI算法</strong></h3>
+<p>CGI又叫<strong>边缘对比度引导的图像插值</strong>(Contrast-guideed image interpolation)</p>
+<p><img src="%E5%9B%BE%E5%83%8F%E7%9A%84%E6%8F%92%E5%80%BCInterpolation%E6%96%B9%E6%B3%95/v2-5112eceb8cbab980007ef7e2350c5756_720w.jpg" alt="https://pic3.zhimg.com/80/v2-5112eceb8cbab980007ef7e2350c5756_720w.jpg" /></p>
+<p>线性插值方法中，仅对传统意义上1-2个像素宽的边缘进行“保护”不够，为了保证插值效果，<strong>需要同时考虑距离边缘一定范围内的非边缘像素并对它们进行类似的保护</strong>（如采用边缘导向的一维方向插值，而不是采用无方向的二维插值），这一做法可称为**“边缘扩散”或“边缘带状化”**。特别地，边缘扩散的程度与边缘对比度（即边缘两侧像素的灰度值差异）成正比，即边缘对比度越大，扩散后的带状化边缘越宽。</p>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/NoteBook/" rel="tag"><i class="fa fa-tag"></i> NoteBook</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/05/30/Tensorflow-gpu%E7%89%88%E6%9C%AC%E5%AE%89%E8%A3%85%E6%96%B9%E5%BC%8F/" rel="prev" title="Tensorflow-gpu版本安装方式">
+                  <i class="fa fa-chevron-left"></i> Tensorflow-gpu版本安装方式
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/05/31/%E5%9B%BE%E5%83%8F%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%98%A0%E5%B0%84%E6%96%B9%E6%B3%95/" rel="next" title="图像的两种映射方法">
+                  图像的两种映射方法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>

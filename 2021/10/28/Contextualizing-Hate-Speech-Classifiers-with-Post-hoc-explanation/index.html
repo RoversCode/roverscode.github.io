@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Author: Brendan Kennedy Created Time: October 10, 2021 10:13 PM Publisher: ACL Quick Note: 利用SOC算法，计算phrase importance score。用这些score正则化group identifier使其接近于0，提升模型对group identifier上文的关注度。 Rate: ⭐⭐⭐⭐ R">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Contextualizing Hate Speech Classifiers with Post-hoc explanation">
+<meta property="og:url" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="Author: Brendan Kennedy Created Time: October 10, 2021 10:13 PM Publisher: ACL Quick Note: 利用SOC算法，计算phrase importance score。用这些score正则化group identifier使其接近于0，提升模型对group identifier上文的关注度。 Rate: ⭐⭐⭐⭐ R">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled1.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled2.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled3.png">
+<meta property="og:image" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled4.png">
+<meta property="article:published_time" content="2021-10-28T04:49:49.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:32.937Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="Paper Reading">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled.png">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/","path":"2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/","title":"Contextualizing Hate Speech Classifiers with Post-hoc explanation"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Contextualizing Hate Speech Classifiers with Post-hoc explanation | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%9C%E8%80%85%E7%A0%94%E7%A9%B6%E7%9A%84%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.</span> <span class="nav-text"> 作者研究的是什么</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%87%87%E7%94%A8%E4%BA%86%E4%BB%80%E4%B9%88%E6%96%B9%E6%B3%95%E6%88%96%E6%96%B9%E6%A1%88"><span class="nav-number">2.</span> <span class="nav-text"> 采用了什么方法或方案</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B7%E4%BD%93"><span class="nav-number">2.1.</span> <span class="nav-text"> 具体</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#analyzing-group-identifier-bias"><span class="nav-number">2.1.1.</span> <span class="nav-text"> Analyzing Group Identifier Bias</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#contextualizing-hate-speech-models%E8%AF%AD%E5%A2%83%E5%8C%96%E4%BB%87%E6%81%A8%E8%A8%80%E8%AE%BA%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.1.2.</span> <span class="nav-text"> Contextualizing Hate Speech Models语境化仇恨言论模型</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%87%E7%AB%A0%E4%B8%AD%E7%9A%84group-identifiers"><span class="nav-number">2.2.</span> <span class="nav-text"> 文章中的Group identifiers</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E9%9B%86"><span class="nav-number">2.3.</span> <span class="nav-text"> 数据集</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gab-hate-corpus"><span class="nav-number">2.3.1.</span> <span class="nav-text"> Gab Hate Corpus</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#stormfront"><span class="nav-number">2.3.2.</span> <span class="nav-text"> Stormfront</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nyt"><span class="nav-number">2.3.3.</span> <span class="nav-text"> NYT</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C"><span class="nav-number">3.</span> <span class="nav-text"> 实验结果</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E6%89%A7%E8%A1%8Csoc%E6%AD%A3%E5%88%99%E5%8C%96%E5%90%8E%E5%86%8D%E4%B8%80%E6%AC%A1%E4%BD%BF%E7%94%A8soc%E8%AE%A1%E7%AE%97phrase%E7%9A%84importance"><span class="nav-number">3.1.</span> <span class="nav-text"> 在执行SOC正则化后，再一次使用SOC计算phrase的importance</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%9C%E8%80%85%E7%9A%84%E6%96%B9%E6%B3%95%E6%9C%89%E4%BB%80%E4%B9%88%E7%BC%BA%E7%82%B9%E4%BB%A5%E5%8F%8A%E6%9C%AA%E6%9D%A5%E5%8F%AF%E5%81%9A%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-number">4.</span> <span class="nav-text"> 作者的方法有什么缺点以及未来可做的工作</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%81%97%E7%95%99%E9%97%AE%E9%A2%98"><span class="nav-number">5.</span> <span class="nav-text"> 遗留问题</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Contextualizing Hate Speech Classifiers with Post-hoc explanation | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Contextualizing Hate Speech Classifiers with Post-hoc explanation
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2021-10-28 12:49:49" itemprop="dateCreated datePublished" datetime="2021-10-28T12:49:49+08:00">2021-10-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:32" itemprop="dateModified" datetime="2022-07-02T13:08:32+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Paper-Reading/" itemprop="url" rel="index"><span itemprop="name">Paper Reading</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Paper-Reading/Hate-Speech/" itemprop="url" rel="index"><span itemprop="name">Hate Speech</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/" class="post-meta-item leancloud_visitors" data-flag-title="Contextualizing Hate Speech Classifiers with Post-hoc explanation" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>4.9k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>4 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Author: Brendan Kennedy<br />
+Created Time: October 10, 2021 10:13 PM<br />
+Publisher: ACL<br />
+Quick Note: 利用SOC算法，计算phrase importance score。用这些score正则化group identifier使其接近于0，提升模型对group identifier上文的关注度。<br />
+Rate: ⭐⭐⭐⭐<br />
+Readed: No<br />
+Tags: 精读<br />
+Year: 2020<br />
+有源码吗: 有</p>
+<span id="more"></span>
+<h1 id="作者研究的是什么"><a class="markdownIt-Anchor" href="#作者研究的是什么"></a> 作者研究的是什么</h1>
+<p>神经仇恨分类器对群体标识符过于敏感。但是这些群体标识符只有在相应的上下文时，才会是Hate speech。现今，最先进的hate speech分类器的工作机制无法解释且有意外输入还会终端。<strong>因此很难让模型基于上下文去对待群体标识符。</strong></p>
+<p><strong>所以作者想要减少模型对群体标识符的偏向，让模型更关注于上下文来对待群体标识符。</strong></p>
+<blockquote>
+<p>这是文章给出的例子，来表明模型对群体标识符的偏向导致的分类错误。</p>
+<img src="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled.png" class="" title="This is a example">
+</blockquote>
+<h1 id="采用了什么方法或方案"><a class="markdownIt-Anchor" href="#采用了什么方法或方案"></a> <strong>采用了什么方法或方案</strong></h1>
+<p>作者从fine-tuned BERT classifiers提取了<strong>post-hoc explanations</strong>，利用post-hoc explanations去检测模型对group identifiers的偏向。然后作者基于post-hoc explanations使用了novel regularization technique促使模型学习group identifier的上下文(窗口范围内)。</p>
+<blockquote>
+<p>问题：</p>
+<ol>
+<li>怎么提取post-hoc explanations→SOC</li>
+<li>SOC算法是怎么回事？
+<ol>
+<li>SOC由<strong>Towards hierarchical importance attribution: explanations compositional semantics for neural sequence models文章提出。</strong></li>
+</ol>
+</li>
+<li>explanations具体是什么？
+<ol>
+<li>explanations就是group identifiers的importance score</li>
+</ol>
+</li>
+<li>怎么用explanations检测模型对group identifiers的偏向
+<ol>
+<li>作者构建了NYT数据集，通过word remove，构造实验。发现模型取group identifiers的偏向。</li>
+</ol>
+</li>
+<li>使用了什么样的正则化，可以使模型学习group identifiers的上下文。
+<ol>
+<li>SOC正则化。</li>
+</ol>
+</li>
+</ol>
+</blockquote>
+<h2 id="具体"><a class="markdownIt-Anchor" href="#具体"></a> 具体</h2>
+<ol>
+<li>Sampling and Occlusion(SOC) explanation algorithm 生成“explanations”</li>
+<li>作者提出一种正则化方法提高模型对group identifier的上下文的敏感度。</li>
+<li>作者直接通过正则化group identifiers的“explanations”对group identifiers的上下文建模。使用&quot;post-hoc explanation algorithms(SOC)&quot; interpret和调整BERT。然后作者关注”post-hoc explanation approaches&quot; interpret模型的预测，但是&quot;post-hoc explanation approaches&quot; 不说明模型的工作机制。这些&quot;explanations&quot;揭示了单词级或短语级输入对预测的重要性。</li>
+</ol>
+<blockquote>
+<p>我们发现，正规化降低了对群体标识符的关注，并提高了仇恨言论的更一般化特征的重要性，如非人性化和侮辱性语言。作者是说，在out-of-domain的test set，他提出的正则化极大的减少了FPR，在in-domain，分类器的性能能保持或者改善。</p>
+</blockquote>
+<h3 id="analyzing-group-identifier-bias"><a class="markdownIt-Anchor" href="#analyzing-group-identifier-bias"></a> Analyzing Group Identifier Bias</h3>
+<p>为了更定量地建立和定义我们的问题，我们<strong>分析了仇恨言论模型对群体标识符的偏见</strong>，<strong>以及这如何导致预测时的假阳性错误</strong>，我们分析了<strong>线性模型的主要特征</strong>，并使用事后解释应用于一个<strong>经过微调的BERT模型</strong>，以衡量模型对这些术语的偏见</p>
+<p>数据集：adversarial-like dataset of New York Times articles.衡量模型对group identifiers的倾向。</p>
+<ul>
+<li>我们首先通过检查模型本身来确定模型对group identifiers的敏感性。线性分类器可以根据其<strong>最高度加权</strong>的特征来检验.我们采用了一种post-hoc explanation算法，从fine-tuned  BERT提取post-hoc explanation。
+<ul>
+<li><strong>Group identifiers in linear models</strong>：
+<ul>
+<li>作者从bag-of-words logistic regression(在GHC trian set训练)的”top features“，收集了25个group identifiers。</li>
+</ul>
+</li>
+<li><strong>Explanation-based measures：</strong>
+<ul>
+<li>虽然最先进的微调 BERT 模型能够对复杂的单词和短语组合进行建模，但是<strong>有些词仅在特定的民族的才是攻击性</strong>的。<strong>作者为了捕获这种信息，用了最先进的SOC算法，这种算法能够为预测生成层次解释。</strong>
+<ul>
+<li>为了生成层次解释：
+<ul>
+<li>SOC首先为短语（phrases)分配重要性分数(score)，消除短语和其上下文的&quot;组成影响&quot;。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>这个上下文的范围是设置了一个窗口大小，中心词是phrase，上下文就是被窗口包围的词。</p>
+<p>SOC分配一个重要分数<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>ϕ</mi><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\phi(P)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">ϕ</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mclose">)</span></span></span></span>，显示phrase P 对句子被归类于HS的贡献度。算法计算了&quot;hate&quot;和&quot;non-hate&quot;的非归一化得分<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">s(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">s</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mclose">)</span></span></span></span>，且评估了当P被masked，用<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>X</mi><mi mathvariant="normal">\</mi><mi>P</mi></mrow><annotation encoding="application/x-tex">X\backslash P</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.07847em;">X</span><span class="mord">\</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span></span></span></span>填充时，<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">s(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">s</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mclose">)</span></span></span></span>的平均变化。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>ϕ</mi><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>E</mi><msub><mi>x</mi><mi>δ</mi></msub></msub><mo stretchy="false">[</mo><mi>s</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>−</mo><mi>s</mi><mo stretchy="false">(</mo><mi>x</mi><mi mathvariant="normal">\</mi><mi>P</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">\phi(P)=E_{x_\delta}[s(x)-s(x\backslash P)]
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">ϕ</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.00586em;vertical-align:-0.25586em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.05764em;">E</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.15139199999999997em;"><span style="top:-2.55em;margin-left:-0.05764em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight"><span class="mord mathdefault mtight">x</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:0em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathdefault mtight" style="margin-right:0.03785em;">δ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.25586em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathdefault">s</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">s</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mord">\</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mclose">)</span><span class="mclose">]</span></span></span></span></span></p>
+<ul>
+<li>
+<p>同时，SOC算法对解释进行凝聚聚类，生成分层布局。</p>
+</li>
+<li>
+<p>仇恨言论模型可能过于关注群体标识符，在预测过程中的影响是，模型将这些术语与仇恨言论过度关联，并选择忽略标识符周围的上下文，从而导致假阳性。</p>
+<ul>
+<li>
+<p>作者有了一个<strong>adversarial test</strong>(NYT数据集)，这个数据集里面有很多群体标识符，但是句子不是HS。</p>
+<img src="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled1.png" class="" title="This is a example">
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="contextualizing-hate-speech-models语境化仇恨言论模型"><a class="markdownIt-Anchor" href="#contextualizing-hate-speech-models语境化仇恨言论模型"></a> Contextualizing Hate Speech Models语境化仇恨言论模型</h3>
+<p>跟之前提到过的，作者用正则化来降低模型对group identifiers的敏感。作者将group identifiers的词删除用作基线。</p>
+<p><strong>Word Removal Baseline.</strong></p>
+<blockquote>
+<p>最简单的方法是完全删除组标识符。我们从A.1节的词汇表中从训练句和测试句中删除单词。</p>
+</blockquote>
+<p><strong>Explanation Regularization.这个就是作者提出的新正则化技术</strong></p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="script">L</mi><mo>=</mo><msup><mi mathvariant="script">L</mi><mo mathvariant="normal">′</mo></msup><mo>+</mo><mi>α</mi><munder><mo>∑</mo><mrow><mi>w</mi><mo>∈</mo><mi>x</mi><mo>∩</mo><mi>S</mi></mrow></munder><mo stretchy="false">[</mo><mi>ϕ</mi><mo stretchy="false">(</mo><mi>w</mi><mo stretchy="false">)</mo><msup><mo stretchy="false">]</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex"> \mathcal{L}=\mathcal{L&#x27;}+\alpha\sum_{w\in x\cap S}[\phi(w)]^2 
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord"><span class="mord mathcal">L</span></span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.8852220000000001em;vertical-align:-0.08333em;"></span><span class="mord"><span class="mord"><span class="mord mathcal">L</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.801892em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:2.3717110000000003em;vertical-align:-1.321706em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.050005em;"><span style="top:-1.8556639999999998em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02691em;">w</span><span class="mrel mtight">∈</span><span class="mord mathdefault mtight">x</span><span class="mbin mtight">∩</span><span class="mord mathdefault mtight" style="margin-right:0.05764em;">S</span></span></span></span><span style="top:-3.0500049999999996em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.321706em;"><span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathdefault">ϕ</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.02691em;">w</span><span class="mclose">)</span><span class="mclose"><span class="mclose">]</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641079999999999em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></p>
+<p>S是group identifiers的集合，x是input word sequence,<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span></span></span></span>是正则化因子。<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msup><mi mathvariant="script">L</mi><mo mathvariant="normal">′</mo></msup></mrow><annotation encoding="application/x-tex">\mathcal{L&#x27;}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.751892em;vertical-align:0em;"></span><span class="mord"><span class="mord"><span class="mord mathcal">L</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.751892em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span></span>是classification objective。</p>
+<h2 id="文章中的group-identifiers"><a class="markdownIt-Anchor" href="#文章中的group-identifiers"></a> 文章中的Group identifiers</h2>
+<img src="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled2.png" class="" title="This is a example">
+<h2 id="数据集"><a class="markdownIt-Anchor" href="#数据集"></a> 数据集</h2>
+<p>GHC,一个新的标记为“基于仇恨的言论”的语料库，以及一个来自Stormfront白人至上主义者在线论坛的注释语料库。还有一个数据集HYT。</p>
+<blockquote>
+<p>Training data for the GHC (GHCtrain) included<br />
+24,353 posts with 2,027 labeled as hate, and test<br />
+data for the GHC (GHCtest) included 1,586 posts<br />
+with 372 labeled as hate. Stormfront splits resulted<br />
+in 7,896 (1,059 hate) training sentences, 979 (122)<br />
+validation, and 1,998 (246) test.</p>
+</blockquote>
+<h3 id="gab-hate-corpus"><a class="markdownIt-Anchor" href="#gab-hate-corpus"></a> Gab Hate Corpus</h3>
+<p>每一条数据的标签有三个  CV,HD,VO</p>
+<ul>
+<li>CV:Call for Violence</li>
+<li>HD:Assault on Human Dignity</li>
+<li>VO: Vulgarity/Offensive Language directed at an individual</li>
+</ul>
+<p>也就是说，如果三个标签都没有。这一条数据就不是Hate Speech</p>
+<h3 id="stormfront"><a class="markdownIt-Anchor" href="#stormfront"></a> Stormfront</h3>
+<h3 id="nyt"><a class="markdownIt-Anchor" href="#nyt"></a> NYT</h3>
+<h1 id="实验结果"><a class="markdownIt-Anchor" href="#实验结果"></a> 实验结果</h1>
+<p>在hate speech deteciton和NYT test set的性能平衡是作者衡量模型是否学习好group identifiers上下文的衡量指标。</p>
+<p>作者在fine-tuned BERT model上分别使用正则化方法和词删除策略，对比好坏。结果如下图</p>
+<img src="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled3.png" class="" title="This is a example">
+<p>对于GHC</p>
+<ul>
+<li>
+<p>基线Bow和BERT比执行词删除策略的Bow和BERT性能高5%。这符合直觉，值得注意的是NYT ACC上涨了十几个百分点。<strong>说明模型确实过于关注group identifier了。</strong></p>
+</li>
+<li>
+<p>为BERT施加基于SOC算法和OC算法的正则化。</p>
+<ul>
+<li>对于OC（<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\alpha=0.1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">0</span><span class="mord">.</span><span class="mord">1</span></span></span></span>)，Precision下降了，但是Recall上升了。说明FP增加了，但是FN减少了。同时NYT Acc基本保持不变。说明执行OC算法的正则化，虽然能够提升模型对上下文的关注度，但是在Hate Speech detection的性能就不太理想。</li>
+</ul>
+<blockquote>
+<p>但是文章只给出了<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\alpha=0.1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">0</span><span class="mord">.</span><span class="mord">1</span></span></span></span>的情况，若是改变<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span></span></span></span>可能这种状况会有改善。</p>
+</blockquote>
+<ul>
+<li>对SOC，在<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\alpha=0.1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">0</span><span class="mord">.</span><span class="mord">1</span></span></span></span>和<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi><mo>=</mo><mn>1.0</mn></mrow><annotation encoding="application/x-tex">\alpha=1.0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">1</span><span class="mord">.</span><span class="mord">0</span></span></span></span>时不同的性能表现，看出<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span></span></span></span>加大，模型对于group identifier的关注度越弱。这导致的结果是，在<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.1</mn></mrow><annotation encoding="application/x-tex">\alpha=0.1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">0</span><span class="mord">.</span><span class="mord">1</span></span></span></span>时，Hate speech detection性能比<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi><mo>=</mo><mn>1.0</mn></mrow><annotation encoding="application/x-tex">\alpha=1.0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.64444em;vertical-align:0em;"></span><span class="mord">1</span><span class="mord">.</span><span class="mord">0</span></span></span></span>时好，对应的，模型对于上文的关注度就弱。
+<ul>
+<li>但是总的来说，执行SOC正则化对于模型减少group identifier的关注度是有效果的，对比于BERT+WR，在Hate speech detection的性能是有提升的。取适当的<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span></span></span></span>，性能会比基线BERT还高。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>对于Stormfront实验的反馈结果，跟在GHC上大差不差。</p>
+<h2 id="在执行soc正则化后再一次使用soc计算phrase的importance"><a class="markdownIt-Anchor" href="#在执行soc正则化后再一次使用soc计算phrase的importance"></a> 在执行SOC正则化后，再一次使用SOC计算phrase的importance</h2>
+<img src="/2021/10/28/Contextualizing-Hate-Speech-Classifiers-with-Post-hoc-explanation/Untitled4.png" class="" title="This is a example">
+<p>Table2直观的体现出了</p>
+<ul>
+<li>group identifier的importance score直线下降，对应的Hate speech的context word，“infection”，“poisoned&quot;，&quot;blamed&quot;等的score上升。</li>
+</ul>
+<p><strong>Table2有力的证明了，SOC正则化能够提升模型对group identifier的上下文关注度</strong></p>
+<h1 id="作者的方法有什么缺点以及未来可做的工作"><a class="markdownIt-Anchor" href="#作者的方法有什么缺点以及未来可做的工作"></a> 作者的方法有什么缺点以及未来可做的工作</h1>
+<ol>
+<li>Hate speech现象在修辞上是高度复杂的。它语句内信息包含着外部的政治，社会，生活信息，遗憾的是，这种现象在Hate speech很常见。<strong>作者的SOC正则化，虽然让模型提高了对上下文的关注度，但是没有能力对句子进行推理。</strong></li>
+<li>在Hate speech detection上，虽然作者SOC正则化能够提高模型的敏感度，但是相应的在实验的数据集上，检测性能提升不明显(甚至是下降的)。 而Hate speech detection性能的提升，才是我们想要的。</li>
+<li><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.0037em;">α</span></span></span></span>的选择很明显是一个很重要的问题，但是文章并没有提及。</li>
+</ol>
+<ul>
+<li>作者只在两个数据集和BERT进行了实验，未来可以将SOC正则化应用在更多的数据集和更多的模型进行尝试。</li>
+<li>SOC正则化不仅可以在HS上尝试，也可以情感分类，方面级情感上尝试。</li>
+<li>是否可以引入外部知识，让模型知晓语句涵盖的外部知识？</li>
+</ul>
+<h1 id="遗留问题"><a class="markdownIt-Anchor" href="#遗留问题"></a> 遗留问题</h1>
+<ul>
+<li>Group identifier是由于bag-of-words logistic regression提出得来的，怎么提取？看W的大小吗？</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+      
+  <div class="popular-posts-header">Related Posts</div>
+  <ul class="popular-posts">
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2021-10-27</div>
+      <div class="popular-posts-title"><a href="2021/10/27/SOC-and-SCD/" rel="bookmark">SOC and SCD</a></div>
+        <div class="popular-posts-excerpt"><p><h1 id="abstract"><a class="markdownIt-Anchor" href="#abstract"></a> Abstract</h1>
+<p>在本文中，我们提出了一种<strong>形式化</strong>的方法来<strong>量化每个词或短语的重要性</strong>，以<strong>生成层次解释</strong>。我们根据我们的公式修改了上下文分解算法，并提出了一种<strong>具有竞争性性能的模型不可知解释算法</strong>。LSTM模型和精细调整的BERT Transformer模型在多数据集上的人工评估和自动度量评估表明，我们的算法在层次解释方面稳健地优于先前的工作。我们展示了我们的算法有助于解释语义的组合，提取分类规则，并提高模型的人类信任.</p></p></div>
+    </li>
+    <li class="popular-posts-item">
+        <div class="popular-posts-date">2021-10-30</div>
+      <div class="popular-posts-title"><a href="2021/10/30/ContexualizingHateSpeech源码阅读笔记/" rel="bookmark">ContexualizingHateSpeech源码阅读笔记</a></div>
+        <div class="popular-posts-excerpt"><p><p>论文阅读笔记：请看我写的Contextualizing Hate Speech Classifiers with Post-hoc explanation文章。</p>
+<p>在这里只写关键函数以及说明原论文的正则化到底是怎么回事。</p>
+<p>源码github地址：<a target="_blank" rel="noopener" href="https://github.com/BrendanKennedy/contextualizing-hate-speech-models-with-explanations">https://github.com/BrendanKennedy/contextualizing-hate-speech-models-with-explanations</a></p></p></div>
+    </li>
+  </ul>
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Paper-Reading/" rel="tag"><i class="fa fa-tag"></i> Paper Reading</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/10/27/SOC-and-SCD/" rel="prev" title="SOC and SCD">
+                  <i class="fa fa-chevron-left"></i> SOC and SCD
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/10/30/ContexualizingHateSpeech%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E7%AC%94%E8%AE%B0/" rel="next" title="ContexualizingHateSpeech源码阅读笔记">
+                  ContexualizingHateSpeech源码阅读笔记 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="图像单物体的分类和定位  计算机视觉不仅仅是分类。例如，我们还想知道花在图片中的位置   定位图片中的物体可以表示为回归任务  预测物体周围的边界框。 一种常见的方法是预测物体中心的水平坐标和垂直坐标，还有其高度和宽度(这意味着我们有四个数字需要预测)。   简单实践，我们可以加载tensorflow当中的预训练的xception模型，然后添加具有四个单位的第二个密集输出层(通常在平均池化层之上">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分类与定位入门">
+<meta property="og:url" content="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="图像单物体的分类和定位  计算机视觉不仅仅是分类。例如，我们还想知道花在图片中的位置   定位图片中的物体可以表示为回归任务  预测物体周围的边界框。 一种常见的方法是预测物体中心的水平坐标和垂直坐标，还有其高度和宽度(这意味着我们有四个数字需要预测)。   简单实践，我们可以加载tensorflow当中的预训练的xception模型，然后添加具有四个单位的第二个密集输出层(通常在平均池化层之上">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled1.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled2.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled3.png">
+<meta property="article:published_time" content="2022-06-03T03:26:31.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:33.034Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="NoteBook">
+<meta property="article:tag" content="Computer Vision">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled.png">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/","path":"2022/06/03/分类与定位/","title":"分类与定位入门"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>分类与定位入门 | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%9B%BE%E5%83%8F%E5%8D%95%E7%89%A9%E4%BD%93%E7%9A%84%E5%88%86%E7%B1%BB%E5%92%8C%E5%AE%9A%E4%BD%8D"><span class="nav-number">1.</span> <span class="nav-text"> 图像单物体的分类和定位</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%89%A9%E4%BD%93%E6%A3%80%E6%B5%8B"><span class="nav-number">2.</span> <span class="nav-text"> 物体检测</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A8%E5%8D%B7%E7%A7%AF%E7%BD%91%E7%BB%9Cfcn"><span class="nav-number">2.1.</span> <span class="nav-text"> 全卷积网络FCN</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%B7%E7%A7%AF%E5%B1%82%E4%BB%A3%E6%9B%BFcnn%E9%A1%B6%E9%83%A8%E7%9A%84%E5%AF%86%E9%9B%86%E5%B1%82%E5%8F%AF%E4%BB%A5%E5%8A%A0%E5%BF%ABcnn%E5%9C%A8%E5%9B%BE%E5%83%8F%E4%B8%8A%E6%BB%91%E5%8A%A8"><span class="nav-number">2.1.1.</span> <span class="nav-text"> 为什么卷积层代替CNN顶部的密集层可以加快CNN在图像上滑动？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#yoloyou-only-look-once"><span class="nav-number">2.2.</span> <span class="nav-text"> YOLO(You Only Look Once)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E6%A0%87%E5%9D%87%E5%80%BC%E5%B9%B3%E5%9D%87%E7%B2%BE%E5%BA%A6map"><span class="nav-number">2.3.</span> <span class="nav-text"> 指标→均值平均精度(mAP)</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="分类与定位入门 | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          分类与定位入门
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-06-03 11:26:31" itemprop="dateCreated datePublished" datetime="2022-06-03T11:26:31+08:00">2022-06-03</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:33" itemprop="dateModified" datetime="2022-07-02T13:08:33+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Computer-Vision/" itemprop="url" rel="index"><span itemprop="name">Computer Vision</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Computer-Vision/Classification-and-Targeting/" itemprop="url" rel="index"><span itemprop="name">Classification and Targeting</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/" class="post-meta-item leancloud_visitors" data-flag-title="分类与定位入门" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2022/06/03/分类与定位/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>5.7k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>5 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="图像单物体的分类和定位"><a class="markdownIt-Anchor" href="#图像单物体的分类和定位"></a> 图像单物体的分类和定位</h1>
+<blockquote>
+<p>计算机视觉不仅仅是分类。例如，我们还想知道花在图片中的位置</p>
+</blockquote>
+<ul>
+<li>定位图片中的物体可以表示为回归任务
+<ul>
+<li>预测物体周围的<strong>边界框。</strong></li>
+<li>一种常见的方法是<strong>预测物体中心的水平坐标和垂直坐标，还有其高度和宽度</strong>(这意味着我们有四个数字需要预测)。</li>
+</ul>
+</li>
+<li>简单实践，我们可以加载tensorflow当中的预训练的xception模型，然后添加具有四个单位的第二个密集输出层(通常在平均池化层之上)，就可以使用MSE损失对其进行训练。</li>
+</ul>
+<span id="more"></span>
+<blockquote>
+<p>这里就有一个问题：Tensorflow的花朵数据集在花朵周围没有边界框，因此我们需要自己添加。这通常是机器学习项目中最难，最昂贵的部分之一：**获取标签。**花时间寻找合适的工具是一个好办法。<strong>有以下的开源图像标记工具</strong></p>
+<ul>
+<li>VGG Image Annotator</li>
+<li>LabelImg</li>
+<li>OpenLabeler</li>
+<li>ImgLab</li>
+<li>或者使用商业工具：LabelBox或Supervisely</li>
+</ul>
+<p>如果所需的数据集很庞大，建议众包。<strong>如果仅需要几千张，就自己做。</strong></p>
+</blockquote>
+<ul>
+<li>如果我们已经有了花朵数据集中每个图像的边界框(假设每个图像都有一个边界框)。我们需要创建一个数据集，其<strong>数据项是经过预处理的图像的批量处理，以及它们的类标签和边界框。</strong></li>
+<li>每个数据项都应为以下形式的元组:(images,(class_labels,bounding_boxes))</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">base_model = keras.applications.xception.Xception(weights=<span class="string">&quot;imagenet&quot;</span>,</span><br><span class="line">                                                  include_top=<span class="literal">False</span>)</span><br><span class="line">avg = keras.layers.GlobalAveragePooling2D()(base_model.output)</span><br><span class="line">class_output = keras.layers.Dense(n_classes, activation=<span class="string">&quot;softmax&quot;</span>)(avg)</span><br><span class="line">loc_output = keras.layers.Dense(<span class="number">4</span>)(avg)</span><br><span class="line">model = keras.models.Model(inputs=base_model.<span class="built_in">input</span>,</span><br><span class="line">                           outputs=[class_output, loc_output])</span><br><span class="line">model.<span class="built_in">compile</span>(loss=[<span class="string">&quot;sparse_categorical_crossentropy&quot;</span>, <span class="string">&quot;mse&quot;</span>],</span><br><span class="line">              loss_weights=[<span class="number">0.8</span>, <span class="number">0.2</span>], <span class="comment"># depends on what you care most about</span></span><br><span class="line">              optimizer=optimizer, metrics=[<span class="string">&quot;accuracy&quot;</span>])</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">add_random_bounding_boxes</span>(<span class="params">images, labels</span>):</span><br><span class="line">    fake_bboxes = tf.random.uniform([tf.shape(images)[<span class="number">0</span>], <span class="number">4</span>])  <span class="comment">#随机生成4个数字，当作是水平和垂直坐标，高度和宽度</span></span><br><span class="line">    <span class="keyword">return</span> images, (labels, fake_bboxes)</span><br><span class="line"></span><br><span class="line">fake_train_set = train_set.take(<span class="number">5</span>).repeat(<span class="number">2</span>).<span class="built_in">map</span>(add_random_bounding_boxes)</span><br><span class="line"></span><br><span class="line">model.fit(fake_train_set, steps_per_epoch=<span class="number">5</span>, epochs=<span class="number">2</span>)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>对于边界框应该进行归一化，以便水平坐标和垂直坐标以及高度和宽度都在0到1的范围内。而且通常要**预测高度和宽度的平方根，而不是直接的高度和宽度值。通过这种方式，**对于大边框的10像素错误将不会像对小边框的10像素错误一样受到惩罚。</p>
+</blockquote>
+<ul>
+<li>
+<p>MSE通常是一个很好的回归任务的损失函数，但是评估模型对边界框的预测能力不是一个很好的指标。</p>
+</li>
+<li>
+<p>最常用的度量指标是**”交并比”(Intersection over Union, IoU)。**在tf.keras中，<strong>已经由tf.keras.metrics.MeanIoU类实现。</strong></p>
+<ul>
+<li>预测边界框和目标边界框之间的重叠面积除以它们的联合面积。</li>
+</ul>
+  <img src="/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled.png" class="" title="this is example">
+</li>
+</ul>
+<h1 id="物体检测"><a class="markdownIt-Anchor" href="#物体检测"></a> 物体检测</h1>
+<p>上述的边界框预测，损失函数<strong>IoU</strong>对单个物体进行分类和定位是很好的，但是如果图像中包含多个物体就不适用了。</p>
+<ul>
+<li><strong>在图像中对多个物体进行分类和定位的任务称为物体检测。</strong></li>
+</ul>
+<p>几年前，一种通用的方法是采用经过训练的CNN来对单个物体进行分类和定位，<strong>然后将其在图像上滑动，如下图所示：</strong></p>
+<img src="/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled1.png" class="" title="this is example">
+<ul>
+<li>在此示例中的，图像被切成6x8的网格，我们显示了CNN在所有3x3区域中的滑动。当CNN看着图像的左上方时，它检测到最左边的玫瑰的一部分，然后当它第一次向右边移动了一步时，又检测到该玫瑰。</li>
+<li>在下一步中，它开始检测最上面的玫瑰的一部分，然后再向右移动一步，便再次检测到它。然后，你将继续在整个图像中滑动CNN，查看所有3x3区域。</li>
+<li>此外，由物体有各种不同的大小，因此你也可以在不同大小的区域上滑动CNN。例如完成3x3区域后，你可能还希望在所有4x4区域上滑动CNN。</li>
+</ul>
+<hr />
+<p>这项技术非常简单直观，但是它将多次检测同一物体，但是位置略有不同。所以，需要进行一些后期处理，以消除所有不必要的边界框。</p>
+<ul>
+<li>一种常见的方法称为<strong>非极大值抑制</strong>：
+<ol>
+<li>首先你需要在CNN中添加一个额外的客观分数(置信度)输出，**以估计图像中确实存在花朵的可能性。**它必须使用sigmoid激活函数，而且可以使用二元交叉熵损失对其进行训练。然后删除所有置信度得分低于某个阈值的边界框：这将删除所有实际上不包含花的边界框。</li>
+<li>找到具有最高客观分数的边界框，并<strong>删除与其重叠很多的所有其他边界框</strong>(例如，IoU大于60%)。例如，在上图中，具有最大客观分数的边界框是最上面玫瑰上方的粗边界框（客观分数由边界框的厚度表示)。另一个边界框同一朵玫瑰与最大边界框重叠很多，因此我们将其删除。</li>
+<li>重复第二步，直到没有更多的边界框可以删除。</li>
+</ol>
+</li>
+</ul>
+<p>这种简单的物体检测方法效果很多，但是它需要多次运行CNN，因此速度很慢。有一种更快的方法可以在图像上滑动CNN：<strong>全卷积网络(FCN)</strong></p>
+<h2 id="全卷积网络fcn"><a class="markdownIt-Anchor" href="#全卷积网络fcn"></a> 全卷积网络FCN</h2>
+<p>FCN的概念在2015年首次提出，用于语义分割**(根据图像所属物体的类别对图像中的每个像素进行分类的任务)**</p>
+<ul>
+<li>作者指出，我们可以用<strong>卷积层代替CNN顶部的密集层</strong>。
+<ul>
+<li>为了解这一点，我们来看一个示例：假设一个具有200个神经元的密集层位于一个卷积层的顶部，该卷积层输出100个特征图，每个特征图的大小为7x7(这是特征图的大小，不是内核大小)。</li>
+<li>每个神经元将计算来自卷积层的所有100x7x7激活的加权和(加上偏置项)。<strong>现在我们看看如果使用200个滤波器(每个滤波器大小为7x7）并使用”valid”填充将卷积层替换为密集层，会发生什么情况？</strong>
+<ul>
+<li>该层将会输出200个特征图，每个特征图为1x1(因为内核正好是输入特征图的大小，并且我们使用的是”valid”填充”），也就是说，它将输出200个数字，就像密集层一样。
+<ul>
+<li>仔细观察卷积层执行的计算，会发现这些数字与密集层产生的数完全相同。唯一的区别是形状不同，<strong>密集层输出的形状是[批量大小，200]的张量，而卷积层将输出的形状为[批量大小，1，1，200]</strong></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="为什么卷积层代替cnn顶部的密集层可以加快cnn在图像上滑动"><a class="markdownIt-Anchor" href="#为什么卷积层代替cnn顶部的密集层可以加快cnn在图像上滑动"></a> 为什么卷积层代替CNN顶部的密集层可以加快CNN在图像上滑动？</h3>
+<ul>
+<li>假设，我们已经训练了CNN以进行花的分类和定位。它在224x224图像上进行训练，并输出10个数字:
+<ul>
+<li>通过softmax输出5个数字，分别是五个花的类别概率</li>
+<li>通过sigmoid给出客观分数(置信度)</li>
+<li>不使用任何激活函数输出4个数字，它们表示边界框的中心坐标及其高度和宽度。</li>
+</ul>
+</li>
+<li>现在假设当网络被馈送入一个224x224图像时，输出层之前的最后一个卷积层(<strong>也称为bottleneck层</strong>)输出7x7特征图。下图的左侧。</li>
+<li>如果我们向FCN提供448x448的图像(下图右侧)，则瓶颈层会出输出14x14的特征图。由于密集输出层已被卷积层替换，<strong>使用了10个大小为7x7的滤波器，填充为”valid且步幅为1。卷积层输出将由10个特征图组成，每个特征图的大小为8X8。</strong>
+<ul>
+<li>也就是说FCN将只处理一次整个图像，并且输出一个8x8的网络，其中每个单元包含10个数字(5个类别概率，1个客观分数和4个边界框坐标)。<strong>这就像拿一个原始的CNN，以每行8步和每列8步的方式将其在图像滑动一样。但是FCN只查看一次图像，因此效率高得多!</strong></li>
+</ul>
+</li>
+</ul>
+<img src="/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled2.png" class="" title="this is example">
+<p>TensorFlow提供了集中YOLO的实现。</p>
+<h2 id="yoloyou-only-look-once"><a class="markdownIt-Anchor" href="#yoloyou-only-look-once"></a> YOLO(You Only Look Once)</h2>
+<blockquote>
+<p>YOLO是Joseph Redmon等人在2015的论文中提出的一种极其快速、准确的物体检测架构，随后在2016(YOLOv2)和2018(YOLOv3)中进行了改进。现在似乎都有YOLO4和YOLOv5了。</p>
+</blockquote>
+<p>YOLOv3的架构和我们上述讨论的架构非常相似，但是有一些重要的区别：</p>
+<ul>
+<li>它为每个网络单元输出5个边界框(不是一个），并且每个边界框都带有一个客观分数。v3是在包含20个类的PASCAL VOC数据集上训练的，因此每个网络单元还输出20个类概率。每个网络单元共有45个数字：5个边界框，每个边界框具有4个坐标，在加上5个客观分数和20个类概率。</li>
+<li>v3<strong>不预测边界框中心的绝对坐标，而是预测相对于网格单元坐标的偏移。<strong>其中(0,0)表示该单元格的左上角，而(1,1)表示右下角。对于每个网格单元，v3被训练智能预测其中心位于该单元的边界框</strong>(但是边界框本身通常会远远超过网格单元)。<strong>所以v3将</strong>sigmoid函数</strong>应用于边界框坐标，以确保它们保持在0到1的范围内。</li>
+<li>在训练神经网络之前，v3会找到5个有代表性的边界框，称为<strong>锚框</strong>(或先验边界框)。它<strong>通过K-Means算法应用于训练集边界框的高度和宽度来实现</strong>。
+<ul>
+<li>例如，如果训练图像包含许多行人，则锚框之一将可能具有典型的行人的尺寸。然后当神经网络预测每个网格单元的5个边界框时，它实际上预测了<strong>重新缩放每个锚定框的幅度</strong>。</li>
+<li>假设一个锚框的高度为100像素，宽度为50像素，并且网络预测（对于一个网格单元）垂直缩放因子为1.5，水平缩放因子为0.9。那预测的边界框大小为150X45像素。更准确地说，<strong>对于每个网络单元和每个锚框，网络都将预测垂直和水平缩放比例的对数。</strong></li>
+</ul>
+</li>
+<li>该网络使用<strong>不同比例的图像</strong>进行训练：在训练过程中每隔几批，网络会随机选择一个新的图像尺寸(从330x330到608x608像素)。这使网络能够学习检测不同比例的物体。
+<ul>
+<li>还可以在不同的比例下使用YOLOv3：较小比例的准确率较低，但速度比较大比例的要快，因此你可以根据你的情况选择合适的折衷方案。</li>
+</ul>
+</li>
+</ul>
+<h2 id="指标均值平均精度map"><a class="markdownIt-Anchor" href="#指标均值平均精度map"></a> 指标→均值平均精度(mAP)</h2>
+<p>在物体检测任务中使用的一个常见的指标是均值平均精度(mAP)。”均值平均”听起来很冗余奇怪不是吗？为了理解这个概念，现在回到PR曲线。</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>P</mi><mo>=</mo><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>P</mi></mrow></mfrac><mspace linebreak="newline"></mspace><mi>R</mi><mo>=</mo><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>N</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">P=\frac{TP}{TP+FP}  \\ R=\frac{TP}{TP+FN}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.1296600000000003em;vertical-align:-0.7693300000000001em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.36033em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">F</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7693300000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span><span class="mspace newline"></span><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault" style="margin-right:0.00773em;">R</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:2.1296600000000003em;vertical-align:-0.7693300000000001em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.36033em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mord mathdefault" style="margin-right:0.13889em;">F</span><span class="mord mathdefault" style="margin-right:0.10903em;">N</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault" style="margin-right:0.13889em;">P</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7693300000000001em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></p>
+<ul>
+<li>尽管PR曲线总体是一方高，一方低。但是在某个部分当召回率增加时，精度实际上会提高，尤其是在较低召回值时。
+<ul>
+<li>这并不奇怪，实际上单纯从公式上看，两者并没有冲突。</li>
+</ul>
+</li>
+<li>假设分类器在10%的召回率下具有90%的精度，但在20%的召回率下具有96%的精度。所以使用分类器以20%的召回率(而不是10%)更合理，因为你将获得更高的召回率和更高的精度。
+<ul>
+<li>因此，我们不应该着眼于10%的召回率，<strong>而是应该着眼于分类器可以提供至少10%的最大精度→96%。而不是90%。</strong></li>
+</ul>
+</li>
+<li><strong>因此要获得关于模型性能的合理概念的一种方法是计算召回率在至少为0%可以获得的最大精度(然后是10%,20%，以此类推，直至100%)，然后计算这些最大精度的平均值。这称为平均精度(AP)指标。</strong>
+<ul>
+<li>当有两个以上类别时，我们可以为每个类别计算AP，然后计算平均AP(mAP)。<strong>是的，这是平均值的平均。</strong></li>
+</ul>
+</li>
+</ul>
+<hr />
+<p>在物体检测系统中，存在另外一层的复杂度：如果系统检测到正确的类别但在错误的位置(即边界框完全没有物体)怎么办？</p>
+<p>理所当然的这是错的预测。<strong>应对这种情况的一种方法是定义IOU阈值</strong>：例如，我们可以认为只有在IOU大于0.5且预测类别正确时，该预测才是正确的。通常将相应的mAP标记为<strong>mAP@0.5</strong>(或mAP@50%,或<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>A</mi><msub><mi>P</mi><mn>50</mn></msub></mrow><annotation encoding="application/x-tex">AP_{50}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord mathdefault">A</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.30110799999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">5</span><span class="mord mtight">0</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>)。</p>
+<p>下面展示一个mAP的例子</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">maximum_precisions</span>(<span class="params">precisions</span>): <span class="comment">#表示得到最大精度</span></span><br><span class="line">    <span class="keyword">return</span> np.flip(np.maximum.accumulate(np.flip(precisions)))</span><br><span class="line">recalls = np.linspace(<span class="number">0</span>, <span class="number">1</span>, <span class="number">11</span>) <span class="comment">#每个阶段召回率的最大精度</span></span><br><span class="line"></span><br><span class="line">precisions = [<span class="number">0.91</span>, <span class="number">0.94</span>, <span class="number">0.96</span>, <span class="number">0.94</span>, <span class="number">0.95</span>, <span class="number">0.92</span>, <span class="number">0.80</span>, <span class="number">0.60</span>, <span class="number">0.45</span>, <span class="number">0.20</span>, <span class="number">0.10</span>]</span><br><span class="line">max_precisions = maximum_precisions(precisions)  <span class="comment">#得到最大精度</span></span><br><span class="line"></span><br><span class="line">mAP = max_precisions.mean()</span><br><span class="line">plt.plot(recalls, precisions, <span class="string">&quot;ro--&quot;</span>, label=<span class="string">&quot;Precision&quot;</span>)</span><br><span class="line">plt.plot(recalls, max_precisions, <span class="string">&quot;bo-&quot;</span>, label=<span class="string">&quot;Max Precision&quot;</span>)</span><br><span class="line">plt.xlabel(<span class="string">&quot;Recall&quot;</span>)</span><br><span class="line">plt.ylabel(<span class="string">&quot;Precision&quot;</span>)</span><br><span class="line">plt.plot([<span class="number">0</span>, <span class="number">1</span>], [mAP, mAP], <span class="string">&quot;g:&quot;</span>, linewidth=<span class="number">3</span>, label=<span class="string">&quot;mAP&quot;</span>)</span><br><span class="line">plt.grid(<span class="literal">True</span>)</span><br><span class="line">plt.axis([<span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>])</span><br><span class="line">plt.legend(loc=<span class="string">&quot;lower center&quot;</span>, fontsize=<span class="number">14</span>)</span><br><span class="line">plt.show()</span><br></pre></td></tr></table></figure>
+<img src="/2022/06/03/%E5%88%86%E7%B1%BB%E4%B8%8E%E5%AE%9A%E4%BD%8D/Untitled3.png" class="" title="this is example">
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/NoteBook/" rel="tag"><i class="fa fa-tag"></i> NoteBook</a>
+              <a href="/tags/Computer-Vision/" rel="tag"><i class="fa fa-tag"></i> Computer Vision</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/06/01/%E4%BD%BF%E7%94%A8%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E8%AE%A1%E7%AE%97%E6%9C%BA%E8%A7%86%E8%A7%89/" rel="prev" title="使用卷积神经网络的计算机视觉">
+                  <i class="fa fa-chevron-left"></i> 使用卷积神经网络的计算机视觉
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/06/04/%E6%B7%B1%E5%BA%A6%E5%8F%AF%E5%88%86%E5%8D%B7%E7%A7%AF/" rel="next" title="深度可分卷积">
+                  深度可分卷积 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>

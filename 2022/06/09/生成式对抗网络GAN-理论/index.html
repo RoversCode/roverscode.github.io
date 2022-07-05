@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 5.4.2">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"roverscode.github.io","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"prism":false,"i18n":{"placeholder":"Searching...","empty":"We didn't find any results for the search: ${query}","hits_time":"${hits} results found in ${time} ms","hits":"${hits} results found"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="什么是生成Generator？   每次我们输入一个x，我们会从一个分布中采样一个Z出来，和x一起喂给network。 同样的一个x的输出，但是每次采样Z出来的不同，输出y也是不同的。所以y也会呈现一个复杂的分布。  所以我们网络的输出就成了一个distribution   那这种可以输出一个distribution的网络，我们就叫它Generator。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="生成式对抗网络GAN(理论)">
+<meta property="og:url" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/index.html">
+<meta property="og:site_name" content="Junjie的博客|Rovers">
+<meta property="og:description" content="什么是生成Generator？   每次我们输入一个x，我们会从一个分布中采样一个Z出来，和x一起喂给network。 同样的一个x的输出，但是每次采样Z出来的不同，输出y也是不同的。所以y也会呈现一个复杂的分布。  所以我们网络的输出就成了一个distribution   那这种可以输出一个distribution的网络，我们就叫它Generator。">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled1.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled2.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled3.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled4.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled5.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled6.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled7.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled8.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled9.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled10.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled11.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled12.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled13.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled14.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled15.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/5.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/1.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/2.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/3.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/4.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled16.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled17.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled18.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled19.png">
+<meta property="og:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled20.png">
+<meta property="article:published_time" content="2022-06-09T10:23:57.000Z">
+<meta property="article:modified_time" content="2022-07-02T05:08:33.076Z">
+<meta property="article:author" content="Jack Liu">
+<meta property="article:tag" content="NoteBook">
+<meta property="article:tag" content="GAN">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled.png">
+
+
+<link rel="canonical" href="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"en","comments":true,"permalink":"https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/","path":"2022/06/09/生成式对抗网络GAN-理论/","title":"生成式对抗网络GAN(理论)"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>生成式对抗网络GAN(理论) | Junjie的博客|Rovers</title>
+  
+
+  <script src="/js/third-party/analytics/baidu-analytics.js"></script>
+  <script async src="https://hm.baidu.com/hm.js?17864ebba3e6ef55a64f4c43f57c1018"></script>
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Junjie的博客|Rovers</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a></li><li class="menu-item menu-item-schedule"><a href="/schedule/" rel="section"><i class="fa fa-calendar fa-fw"></i>Schedule</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li><li class="menu-item menu-item-commonweal"><a href="/404/" rel="section"><i class="fa fa-heartbeat fa-fw"></i>Commonweal 404</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E7%94%9F%E6%88%90generator"><span class="nav-number">1.</span> <span class="nav-text"> 什么是生成Generator？</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E4%BB%AC%E9%9C%80%E8%A6%81%E8%AE%AD%E7%BB%83generator"><span class="nav-number">2.</span> <span class="nav-text"> 为什么我们需要训练generator</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#generative-adversarial-networkgan"><span class="nav-number">3.</span> <span class="nav-text"> Generative Adversarial Network(GAN)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#unconditional-generation"><span class="nav-number">4.</span> <span class="nav-text"> Unconditional generation</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#discriminator%E9%89%B4%E5%88%AB%E5%99%A8"><span class="nav-number">4.1.</span> <span class="nav-text"> Discriminator鉴别器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gan%E7%9A%84%E6%80%9D%E6%83%B3"><span class="nav-number">4.2.</span> <span class="nav-text"> GAN的思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E7%AE%97%E6%B3%95algorithm%E8%A7%92%E5%BA%A6%E7%9C%8Bg%E5%92%8Cd"><span class="nav-number">4.3.</span> <span class="nav-text"> 从算法Algorithm角度看G和D</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%AD%E7%BB%83%E7%9B%AE%E6%A0%87"><span class="nav-number">4.4.</span> <span class="nav-text"> 训练目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gan%E6%98%AF%E5%BE%88%E9%9A%BE%E8%AE%AD%E7%BB%83%E7%9A%84%E6%89%80%E4%BB%A5%E6%9C%89%E4%BA%9B%E5%B0%8F%E6%8A%80%E5%B7%A7-wgan"><span class="nav-number">4.5.</span> <span class="nav-text"> GAN是很难训练的，所以有些小技巧-WGAN</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%A6%96%E5%85%88%E8%AE%A9%E6%88%91%E4%BB%AC%E7%9F%A5%E9%81%93%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BC%9A%E9%9A%BE%E8%AE%AD%E7%BB%83"><span class="nav-number">4.5.1.</span> <span class="nav-text"> 首先让我们知道为什么会难训练</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#wasserstein-distance-%E7%93%A6%E7%91%9F%E6%96%AF%E5%9D%A6%E8%B7%9D%E7%A6%BB"><span class="nav-number">4.5.2.</span> <span class="nav-text"> Wasserstein distance 瓦瑟斯坦距离</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#wgan"><span class="nav-number">4.6.</span> <span class="nav-text"> WGAN</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%8E%E4%B9%88%E7%A1%AE%E4%BF%9Ddiscriminator%E4%B8%80%E5%AE%9A%E7%AC%A6%E5%90%881-lipschitz"><span class="nav-number">4.6.1.</span> <span class="nav-text"> 怎么确保Discriminator一定符合1-Lipschitz？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#gan%E7%9A%84%E8%AE%AD%E7%BB%83%E8%BF%98%E6%98%AF%E4%B8%80%E4%B8%AA%E6%8C%91%E6%88%98"><span class="nav-number">4.7.</span> <span class="nav-text"> GAN的训练还是一个挑战</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E7%9A%84tips"><span class="nav-number">4.8.</span> <span class="nav-text"> 其他的Tips</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#evaluation-of-generation"><span class="nav-number">5.</span> <span class="nav-text"> Evaluation of Generation</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%81%9A%E6%B3%95%E6%98%AF%E5%88%A9%E7%94%A8%E5%9B%BE%E5%83%8F%E5%88%86%E7%B1%BB%E6%A8%A1%E5%9E%8B"><span class="nav-number">5.1.</span> <span class="nav-text"> 第一个可能的做法是利用图像分类模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#mode-collapse"><span class="nav-number">5.1.1.</span> <span class="nav-text"> mode collapse</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mode-dropping"><span class="nav-number">5.2.</span> <span class="nav-text"> mode dropping</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%A1%E9%87%8Fgenerator%E4%BA%A7%E7%94%9F%E7%9A%84%E5%A4%9A%E6%A0%B7%E6%80%A7%E5%A4%9F%E4%B8%8D%E5%A4%9F"><span class="nav-number">5.2.1.</span> <span class="nav-text"> 衡量Generator产生的多样性够不够</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A1%A1%E9%87%8Fgenerator%E4%BA%A7%E7%94%9F%E7%9A%84%E5%A4%9A%E6%A0%B7%E6%80%A7%E5%A4%9F%E4%B8%8D%E5%A4%9F-2"><span class="nav-number">5.2.2.</span> <span class="nav-text"> 衡量Generator产生的多样性够不够</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#frechet-inception-distancefid"><span class="nav-number">5.3.</span> <span class="nav-text"> Frechet Inception Distance(FID)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#we-dont-want-memory-gan"><span class="nav-number">5.4.</span> <span class="nav-text"> We don’t want memory GAN</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#conditional-gan"><span class="nav-number">6.</span> <span class="nav-text"> Conditional GAN</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%8E%E4%B9%88%E5%81%9Aconditional-gan"><span class="nav-number">6.1.</span> <span class="nav-text"> 怎么做Conditional GAN?</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#gan%E4%BB%8E%E6%97%A0%E6%A0%87%E6%B3%A8%E8%B5%84%E6%96%99%E9%87%8C%E9%9D%A2%E5%AD%A6%E4%B9%A0"><span class="nav-number">7.</span> <span class="nav-text"> GAN从无标注资料里面学习</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#cycle-gan"><span class="nav-number">7.1.</span> <span class="nav-text"> Cycle GAN</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Jack Liu"
+      src="/uploads/avatar.png">
+  <p class="site-author-name" itemprop="name">Jack Liu</p>
+  <div class="site-description" itemprop="description">To Be Algorithm Engineer</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">39</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">30</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="sidebar-button site-overview-item animated">
+    <button><i class="fa fa-comment"></i>
+      Chat
+    </button>
+  </div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/RoversCode" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;RoversCode" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://blog.csdn.net/as949179700?spm=1000.2115.3001.5343" title="CSDN → https:&#x2F;&#x2F;blog.csdn.net&#x2F;as949179700?spm&#x3D;1000.2115.3001.5343" rel="noopener" target="_blank"><i class="fab fa-c fa-fw"></i>CSDN</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://space.bilibili.com/27270848?spm_id_from=333.1007.0.0" title="BiliBili → https:&#x2F;&#x2F;space.bilibili.com&#x2F;27270848?spm_id_from&#x3D;333.1007.0.0" rel="noopener" target="_blank"><i class="fab fa-bilibili fa-fw"></i>BiliBili</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren" title="ZhiHu → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;tian-qiao-di-xia-tao-mi-de-ren" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i>ZhiHu</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll site-overview-item animated">
+    <div class="links-of-blogroll-title"><i class="fa fa-globe fa-fw"></i>
+      Blogrolls
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://www.vstay.cn/" title="https:&#x2F;&#x2F;www.vstay.cn&#x2F;" rel="noopener" target="_blank">Vstay</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.zhihu.com/people/o-shui-ge-er" title="https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;o-shui-ge-er" rel="noopener" target="_blank">水歌儿's ZhiHu</a>
+        </li>
+    </ul>
+  </div>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="Back to top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://roverscode.github.io/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.png">
+      <meta itemprop="name" content="Jack Liu">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junjie的博客|Rovers">
+      <meta itemprop="description" content="To Be Algorithm Engineer">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="生成式对抗网络GAN(理论) | Junjie的博客|Rovers">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          生成式对抗网络GAN(理论)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">Posted on</span>
+
+      <time title="Created: 2022-06-09 18:23:57" itemprop="dateCreated datePublished" datetime="2022-06-09T18:23:57+08:00">2022-06-09</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">Edited on</span>
+      <time title="Modified: 2022-07-02 13:08:33" itemprop="dateModified" datetime="2022-07-02T13:08:33+08:00">2022-07-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">In</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Generative-Adversarial-Networks/" itemprop="url" rel="index"><span itemprop="name">Generative Adversarial Networks</span></a>
+        </span>
+          , 
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Generative-Adversarial-Networks/Basis/" itemprop="url" rel="index"><span itemprop="name">Basis</span></a>
+        </span>
+    </span>
+
+  
+    <span id="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/" class="post-meta-item leancloud_visitors" data-flag-title="生成式对抗网络GAN(理论)" title="Views">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">Views: </span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2022/06/09/生成式对抗网络GAN-理论/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="Symbols count in article">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">Symbols count in article: </span>
+      <span>6.2k</span>
+    </span>
+    <span class="post-meta-item" title="Reading time">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">Reading time &asymp;</span>
+      <span>6 mins.</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="什么是生成generator"><a class="markdownIt-Anchor" href="#什么是生成generator"></a> 什么是生成Generator？</h1>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled.png" class="" title="This is an example image">
+<ul>
+<li>每次我们输入一个x，我们会从一个分布中采样一个Z出来，和x一起喂给network。</li>
+<li>同样的一个x的输出，但是每次采样Z出来的不同，输出y也是不同的。所以y也会呈现一个复杂的分布。
+<ul>
+<li>所以我们网络的输出就成了一个distribution</li>
+</ul>
+</li>
+<li>那这种可以输出一个distribution的网络，我们就叫它Generator。</li>
+</ul>
+<span id="more"></span>
+<h1 id="为什么我们需要训练generator"><a class="markdownIt-Anchor" href="#为什么我们需要训练generator"></a> 为什么我们需要训练generator</h1>
+<ul>
+<li>当我们需要模型有一点“创造力”的时候，我们需要generator。
+<ul>
+<li>也就是说，我们需要同样的输出，会输出不一样的结果。</li>
+</ul>
+</li>
+</ul>
+<p>举两个例子：</p>
+<ol>
+<li>
+<p>绘画</p>
+<ol>
+<li>
+<p>题目：画一个有红眼睛的人→神经网络→每个人脑海的角色是不同的。</p>
+<ol>
+<li>有的人想的可能是→酷拉皮卡</li>
+<li>有的人想的可能是→辉夜</li>
+<li>还有可能是→赤瞳</li>
+</ol>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled1.png" class="" title="This is an example image">
+</li>
+</ol>
+</li>
+<li>
+<p>对话</p>
+<ol>
+<li>有一个人提问：你知道辉夜是谁吗？
+<ol>
+<li>我们可能回答：火影忍者的大BOSS</li>
+<li>也有人回答：辉夜大小姐想让我告白的女主</li>
+</ol>
+</li>
+</ol>
+</li>
+</ol>
+<ul>
+<li>上述答案都没错，之前一个输入有标准的一个输出的训练，已经不再适用于这种情况了。</li>
+<li><strong>这个时候我们就需要一个generator的model，去输出一个分布，这个分布可能是辉夜，可能是赤瞳。</strong></li>
+</ul>
+<h1 id="generative-adversarial-networkgan"><a class="markdownIt-Anchor" href="#generative-adversarial-networkgan"></a> Generative Adversarial Network(GAN)</h1>
+<ul>
+<li>下面通过生成二次元人物的生成任务例子，来介绍GAN</li>
+</ul>
+<h1 id="unconditional-generation"><a class="markdownIt-Anchor" href="#unconditional-generation"></a> Unconditional generation</h1>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled2.png" class="" title="This is an example image">
+<h2 id="discriminator鉴别器"><a class="markdownIt-Anchor" href="#discriminator鉴别器"></a> Discriminator鉴别器</h2>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled3.png" class="" title="This is an example image">
+<ul>
+<li>Discriminator是一个神经网络，喂图片给它，它会输出一个数值。
+<ul>
+<li>这个数值越大，表示我们生成的图片跟真实图片越像。</li>
+</ul>
+</li>
+</ul>
+<h2 id="gan的思想"><a class="markdownIt-Anchor" href="#gan的思想"></a> GAN的思想</h2>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled4.png" class="" title="This is an example image">
+<ul>
+<li>第一代的Generator的参数是随机初始化的，生成出来时乱七八糟的</li>
+<li>如何让Generator知道生成出来的东西时乱七八糟的？答案时要靠Discriminator</li>
+<li>两个东西都是神经网络，所以它们在学习过程中参数也会更新
+<ul>
+<li>我们最想要的状态就是Generator生成的图片越来越像二次元任务。Discriminator会越来越严苛。</li>
+<li>两者就像是在较劲一样，所以叫Adversarial。</li>
+</ul>
+</li>
+</ul>
+<h2 id="从算法algorithm角度看g和d"><a class="markdownIt-Anchor" href="#从算法algorithm角度看g和d"></a> 从算法Algorithm角度看G和D</h2>
+<p>一开始</p>
+<ul>
+<li>初始化generator和discriminator的参数</li>
+<li>在每一个训练的epoch
+<ol>
+<li>step1：固定G的参数，更新D的参数
+<ol>
+<li>目的是让D学习：给真实二次元任务一个高的分数，给G生成的图片一个低的分数。</li>
+<li>D可以是分类任务，也可以是回归任务。效果怎么好，就怎么来。</li>
+</ol>
+</li>
+<li>step2: 固定D参数，更新G的参数
+<ol>
+<li>让G学习“欺骗”D。</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>所以就是反复的训练D跟G，训练一阵子D，再训练一阵子G。反复循环。</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled5.png" class="" title="This is an example image">
+<h2 id="训练目标"><a class="markdownIt-Anchor" href="#训练目标"></a> 训练目标</h2>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled6.png" class="" title="This is an example image">
+<ul>
+<li><strong>我们的Generator的终极目标是生成一个和我们数据集的数据一样分布</strong></li>
+<li>所以，我们要做的其实是最小化上图的<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mi>G</mi></msub></mrow><annotation encoding="application/x-tex">P_G</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>和<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">P_{data}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的<strong>差异(divergence)</strong></li>
+</ul>
+<p>这个divergence要如何计算？计算这个问题是初始GAN的最大难题，那GAN的初代作者想出来的办法是通过采样来近似divergence。</p>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled7.png" class="" title="This is an example image">
+<ul>
+<li>那这个divergence就是我们的Discriminator来完成。</li>
+<li>我们会从数据集得到(sample)一组图片(向量)，从某一个分布中采样得到一组(向量)。
+<ul>
+<li>用这两组的divergence的衡量实际的divergence。</li>
+<li>为什么可以衡量，原论文上有数学上的推导<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1406.2661">原论文</a></li>
+</ul>
+</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled8.png" class="" title="This is an example image">
+<ul>
+<li>这里D的训练目标就是最大化<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi><mi>a</mi><mi>x</mi><mi>V</mi><mo stretchy="false">(</mo><mi>D</mi><mo separator="true">,</mo><mi>G</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">maxV(D,G)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">m</span><span class="mord mathdefault">a</span><span class="mord mathdefault">x</span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">G</span><span class="mclose">)</span></span></span></span>，因为越大表示两个类越像。</li>
+<li>这里<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi><mi>a</mi><mi>x</mi><mi>V</mi><mo stretchy="false">(</mo><mi>D</mi><mo separator="true">,</mo><mi>G</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">maxV(D,G)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">m</span><span class="mord mathdefault">a</span><span class="mord mathdefault">x</span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">G</span><span class="mclose">)</span></span></span></span>，已经可以转换成损失函数。然后正常训练了。</li>
+<li>我们就用这个<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>m</mi><mi>a</mi><mi>x</mi><mi>V</mi><mo stretchy="false">(</mo><mi>D</mi><mo separator="true">,</mo><mi>G</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">maxV(D,G)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">m</span><span class="mord mathdefault">a</span><span class="mord mathdefault">x</span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">G</span><span class="mclose">)</span></span></span></span>代替掉<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>D</mi><mi>i</mi><mi>v</mi><mo stretchy="false">(</mo><msub><mi>P</mi><mi>G</mi></msub><mo separator="true">,</mo><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">Div(P_G,P_{data})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>所以</li>
+</ul>
+<p>所以我们原本的目的是<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>G</mi><mo>∗</mo><mo>=</mo><mi>arg</mi><mo>⁡</mo><munder><mo><mi>min</mi><mo>⁡</mo></mo><mi>G</mi></munder><mi>D</mi><mi>i</mi><mi>v</mi><mo stretchy="false">(</mo><msub><mi>P</mi><mi>G</mi></msub><mo separator="true">,</mo><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">G*=\arg\min\limits_{G} Div(P_G,P_{data})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">G</span><span class="mord">∗</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.4943309999999999em;vertical-align:-0.744331em;"></span><span class="mop">ar<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.66786em;"><span style="top:-2.055669em;margin-left:0em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span style="top:-2.7em;"><span class="pstrut" style="height:2.7em;"></span><span><span class="mop">min</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.744331em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>，现在我们可以将<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>D</mi><mi>i</mi><mi>v</mi><mo stretchy="false">(</mo><msub><mi>P</mi><mi>G</mi></msub><mo separator="true">,</mo><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">Div(P_G,P_{data})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.03588em;">v</span><span class="mopen">(</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>替换为<span class="katex"><span class="katex-mathml"><math><semantics><mrow><munder><mo><mi>max</mi><mo>⁡</mo></mo><mi>D</mi></munder><mi>V</mi><mo stretchy="false">(</mo><mi>D</mi><mo separator="true">,</mo><mi>G</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\max\limits_{D} V(D,G)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.494331em;vertical-align:-0.7443310000000001em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.43055999999999983em;"><span style="top:-2.055669em;margin-left:0em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">D</span></span></span></span><span style="top:-2.7em;"><span class="pstrut" style="height:2.7em;"></span><span><span class="mop">max</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7443310000000001em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">G</span><span class="mclose">)</span></span></span></span>。</p>
+<ul>
+<li>所以我们就有了这样一个目标函数</li>
+</ul>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>G</mi><mo>∗</mo><mo>=</mo><mi>arg</mi><mo>⁡</mo><munder><mo><mi>min</mi><mo>⁡</mo></mo><mi>G</mi></munder><munder><mo><mi>max</mi><mo>⁡</mo></mo><mi>D</mi></munder><mi>V</mi><mo stretchy="false">(</mo><mi>D</mi><mo separator="true">,</mo><mi>G</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">G*=\arg\min\limits_{G} \max\limits_{D} V(D,G)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.68333em;vertical-align:0em;"></span><span class="mord mathdefault">G</span><span class="mord">∗</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1.494331em;vertical-align:-0.7443310000000001em;"></span><span class="mop">ar<span style="margin-right:0.01389em;">g</span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.66786em;"><span style="top:-2.055669em;margin-left:0em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span style="top:-2.7em;"><span class="pstrut" style="height:2.7em;"></span><span><span class="mop">min</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.744331em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.43055999999999983em;"><span style="top:-2.055669em;margin-left:0em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">D</span></span></span></span><span style="top:-2.7em;"><span class="pstrut" style="height:2.7em;"></span><span><span class="mop">max</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7443310000000001em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault" style="margin-right:0.22222em;">V</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord mathdefault">G</span><span class="mclose">)</span></span></span></span></span></p>
+<blockquote>
+<p>实际上，我们也可以用真正的JS divergence，<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1606.00709">Using the divergence you like</a>。但是实验结果显示，用了真正的JS divergence，DAN的效果也没有好多少，训练难度也没有降低。</p>
+</blockquote>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled9.png" class="" title="This is an example image">
+<h2 id="gan是很难训练的所以有些小技巧-wgan"><a class="markdownIt-Anchor" href="#gan是很难训练的所以有些小技巧-wgan"></a> GAN是很难训练的，所以有些小技巧-WGAN</h2>
+<h3 id="首先让我们知道为什么会难训练"><a class="markdownIt-Anchor" href="#首先让我们知道为什么会难训练"></a> 首先让我们知道为什么会难训练</h3>
+<ul>
+<li><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mi>G</mi></msub></mrow><annotation encoding="application/x-tex">P_G</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>和<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">P_{data}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>基本不会有重叠
+<ol>
+<li>自然下的数据
+<ul>
+<li><span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">P_{data}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>和<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mi>G</mi></msub></mrow><annotation encoding="application/x-tex">P_G</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>是高维空间下低维的复合。</li>
+<li>它们之间的重叠可以被忽略。</li>
+</ul>
+</li>
+<li>采样
+<ol>
+<li>我们并不知道<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mi>G</mi></msub></mrow><annotation encoding="application/x-tex">P_G</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>和<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">P_{data}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>确切的分布，我们只能通过采样间接知道。</li>
+<li>如果我们采样的点，不够多。Discriminator也会认为两者没有重叠部分。</li>
+</ol>
+</li>
+</ol>
+</li>
+</ul>
+<p>那几乎不重叠，会对JS divergence造成什么影响呢？</p>
+<ul>
+<li>如果两个分布没有重叠，那么JS divergence算出来总是log2。</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled10.png" class="" title="This is an example image">
+<ul>
+<li>假设<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mi>G</mi></msub></mrow><annotation encoding="application/x-tex">P_G</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight">G</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>和<span class="katex"><span class="katex-mathml"><math><semantics><mrow><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub></mrow><annotation encoding="application/x-tex">P_{data}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.83333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.33610799999999996em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的JS divergence的大小，是上图两条直线的距离。
+<ul>
+<li>明明中间比左边好啊，但是我们并不知道，JS算出来还是log2。</li>
+</ul>
+</li>
+<li>所以在训练上，如果两个分布没有重叠，二分类器的准确率通常会达到100%。
+<ul>
+<li>但是，我们本来会期待说，这个Discriminator的Loss，会越来越大。表示分类越来越难，代表我们生成的图片和数据集的图片越来越像，越来越接近！</li>
+<li>但是，如果跟我们上述说的一样，两个数据没有重叠，那我们根本观察不到想要的现象，这个Discriminztor训练的出来的Loss根本没有什么意义，因为它的准确率总是100%。</li>
+<li><strong>所以，这导致我们根本不知道我们的Generator，有没有变得越来越好。</strong></li>
+</ul>
+</li>
+</ul>
+<h3 id="wasserstein-distance-瓦瑟斯坦距离"><a class="markdownIt-Anchor" href="#wasserstein-distance-瓦瑟斯坦距离"></a> Wasserstein distance 瓦瑟斯坦距离</h3>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled11.png" class="" title="This is an example image">
+<ul>
+<li>这里有一个简单例子说明什么是Wasserstein distance，把分布P<strong>变成</strong>分布Q的平均距离d。就是Wasserstein distance.</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled12.png" class="" title="This is an example image">
+<ul>
+<li>当P和Q复杂了之后，Wasserstein distance就不好计算了。</li>
+<li>想把P变成Q的分布，可以有许多的方法。如上图就展示了两种，一种移动的距离小，一种移动的巨大。</li>
+<li>所以计算Wasserstein distance就有一个标准，要使用最短平均距离的”moving plan”，才是我们要的Wasserstein distance。</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled13.png" class="" title="This is an example image">
+<ul>
+<li>跟之前JS  distance不一样的是，如果我们采用Wasserstein distance来衡量两个分布的差异。</li>
+<li><strong>如果采样的数据都不重叠，我们也可以知道中间比左边好，右边比中间好！</strong></li>
+<li><strong>我们将Wasserstein  distance 取代 JS distance的GAN ，叫做WGAN。</strong></li>
+</ul>
+<h2 id="wgan"><a class="markdownIt-Anchor" href="#wgan"></a> WGAN</h2>
+<p>Wasserstein distance计算方式如下：</p>
+<p class='katex-block'><span class="katex-display"><span class="katex"><span class="katex-mathml"><math><semantics><mrow><munder><mo><mi>max</mi><mo>⁡</mo></mo><mrow><mi>D</mi><mo>∈</mo><mn>1</mn><mo>−</mo><mi>L</mi><mi>i</mi><mi>p</mi><mi>s</mi><mi>c</mi><mi>h</mi><mi>i</mi><mi>t</mi><mi>z</mi></mrow></munder><mo stretchy="false">{</mo><msub><mi>E</mi><mrow><mi>y</mi><mo>∽</mo><msub><mi>P</mi><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow></msub></mrow></msub><mo stretchy="false">[</mo><mi>D</mi><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>−</mo><msub><mi>E</mi><mrow><mi>y</mi><mo>∽</mo><msub><mi>P</mi><mi>G</mi></msub></mrow></msub><mo stretchy="false">[</mo><mi>D</mi><mo stretchy="false">(</mo><mi>y</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">\max\limits_{D\in1-Lipschitz}\{E_{y\backsim P_{data}}[D(y)]-E_{y\backsim P_{G}}[D(y)]\}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.638216em;vertical-align:-0.8882159999999999em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.43055999999999994em;"><span style="top:-2.0478920000000005em;margin-left:0em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.02778em;">D</span><span class="mrel mtight">∈</span><span class="mord mtight">1</span><span class="mbin mtight">−</span><span class="mord mathdefault mtight">L</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">p</span><span class="mord mathdefault mtight">s</span><span class="mord mathdefault mtight">c</span><span class="mord mathdefault mtight">h</span><span class="mord mathdefault mtight">i</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight" style="margin-right:0.04398em;">z</span></span></span></span><span style="top:-2.7em;"><span class="pstrut" style="height:2.7em;"></span><span><span class="mop">max</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8882159999999999em;"><span></span></span></span></span></span><span class="mopen">{</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.05764em;">E</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.328331em;"><span style="top:-2.5500000000000003em;margin-left:-0.05764em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.03588em;">y</span><span class="mrel amsrm mtight">∽</span><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3487714285714287em;margin-left:-0.13889em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">d</span><span class="mord mathdefault mtight">a</span><span class="mord mathdefault mtight">t</span><span class="mord mathdefault mtight">a</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15122857142857138em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1.036108em;vertical-align:-0.286108em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.05764em;">E</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.328331em;"><span style="top:-2.5500000000000003em;margin-left:-0.05764em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.03588em;">y</span><span class="mrel amsrm mtight">∽</span><span class="mord mtight"><span class="mord mathdefault mtight" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.3567071428571427em;margin-left:-0.13889em;margin-right:0.07142857142857144em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mtight"><span class="mord mathdefault mtight">G</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.14329285714285717em;"><span></span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.286108em;"><span></span></span></span></span></span></span><span class="mopen">[</span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mopen">(</span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mclose">)</span><span class="mclose">]</span><span class="mclose">}</span></span></span></span></span></p>
+<ul>
+<li>
+<p>这个公式的意思是，我们希望大括号里左边的式子越大越好，右边的式子越小越好。</p>
+<ul>
+<li>但是这个样子会有一个问题，如果不加以限制，Discriminator就会让Wasserstein distance总是无穷，如下图。这样结果，Discriminator永远也无法收敛。</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled14.png" class="" title="This is an example image">
+</li>
+<li>
+<p>解决办法是<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>D</mi><mo>∈</mo><mn>1</mn><mo>−</mo><mi>L</mi><mi>i</mi><mi>p</mi><mi>s</mi><mi>c</mi><mi>h</mi><mi>i</mi><mi>t</mi><mi>z</mi></mrow><annotation encoding="application/x-tex">D\in1-Lipschitz</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.72243em;vertical-align:-0.0391em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.72777em;vertical-align:-0.08333em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">L</span><span class="mord mathdefault">i</span><span class="mord mathdefault">p</span><span class="mord mathdefault">s</span><span class="mord mathdefault">c</span><span class="mord mathdefault">h</span><span class="mord mathdefault">i</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span>，D要满足利普希茨连续。限制函数的剧烈变化。也就是说D要足够平滑。</p>
+<ul>
+<li>这个限制，可以让上图的情况不会发生。</li>
+</ul>
+</li>
+</ul>
+<h3 id="怎么确保discriminator一定符合1-lipschitz"><a class="markdownIt-Anchor" href="#怎么确保discriminator一定符合1-lipschitz"></a> 怎么确保Discriminator一定符合1-Lipschitz？</h3>
+<ul>
+<li>原始的WGAN做了一个比较粗糙的处理
+<ul>
+<li>限制参数的大小在-c到c，超过c等于c，小于-c等于-c</li>
+</ul>
+</li>
+<li>后来有人提出Gradient Penalty  → <code>[论文](https://arxiv.org/abs/1704.00028)</code></li>
+<li>现在有一个方法真的可以把D限制到<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mn>1</mn><mo>−</mo><mi>L</mi><mi>i</mi><mi>p</mi><mi>s</mi><mi>c</mi><mi>h</mi><mi>i</mi><mi>t</mi><mi>z</mi></mrow><annotation encoding="application/x-tex">1-Lipschitz</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.72777em;vertical-align:-0.08333em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">L</span><span class="mord mathdefault">i</span><span class="mord mathdefault">p</span><span class="mord mathdefault">s</span><span class="mord mathdefault">c</span><span class="mord mathdefault">h</span><span class="mord mathdefault">i</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.04398em;">z</span></span></span></span>，Spectral Normalization（SNGAN）→ Keep gradient norm
+<ul>
+<li>smaller than 1 everywhere。 <a target="_blank" rel="noopener" href="https://arxiv.org/abs/1802.05957">论文</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="gan的训练还是一个挑战"><a class="markdownIt-Anchor" href="#gan的训练还是一个挑战"></a> GAN的训练还是一个挑战</h2>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled15.png" class="" title="This is an example image">
+<ul>
+<li>当某一方不在进步，另一方也就失去了前进的方向。整个网络就会坏掉。</li>
+</ul>
+<h2 id="其他的tips"><a class="markdownIt-Anchor" href="#其他的tips"></a> 其他的Tips</h2>
+<ul>
+<li>Tips from Soumith . <a target="_blank" rel="noopener" href="https://github.com/soumith/ganhacks">https://github.com/soumith/ganhacks</a></li>
+<li>Tips in DCGAN : Guideline for network architecture designfor image generation <a target="_blank" rel="noopener" href="https://arxiv.org/abs/1511.06434">https://arxiv.org/abs/1511.06434</a>. lmproved techniques for training GANs</li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/1606.03498%C2%B7">https://arxiv.org/abs/1606.03498·</a> Tips from BigGAN</li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/1809.11096">https://arxiv.org/abs/1809.11096</a></li>
+</ul>
+<h1 id="evaluation-of-generation"><a class="markdownIt-Anchor" href="#evaluation-of-generation"></a> Evaluation of Generation</h1>
+<p>如何去评价一个Generation生成出来图片是好的呢？（除人眼看）实际上这里是GAN的难点。</p>
+<h2 id="第一个可能的做法是利用图像分类模型"><a class="markdownIt-Anchor" href="#第一个可能的做法是利用图像分类模型"></a> 第一个可能的做法是利用图像分类模型</h2>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/5.png" class="" title="This is an example image">
+<ul>
+<li>这里的意思是，如果我们生成出来的图片，喂给图像分类模型，结果是某一类的概率压倒性的大于是其他类的概率
+<ul>
+<li>我们可以认为，Generator生成出来图片似乎还不错</li>
+</ul>
+</li>
+<li>如果图像分类模型的输出，所有类别的概率都差不多
+<ul>
+<li>我们可以认为，我们Generator生成的图片可能不太好，导致图像分类系统无法知晓这到底是个什么东西。</li>
+</ul>
+</li>
+</ul>
+<h3 id="mode-collapse"><a class="markdownIt-Anchor" href="#mode-collapse"></a> mode collapse</h3>
+<p>利用图像分类模型的方法，会被model collapse欺骗过去。</p>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/1.png" class="" title="This is an example image">
+<ul>
+<li>mode collapse的意思是说，模型为了能欺骗Discriminator，会输出某一数据相似的东西。然后整个生成模型，只会输出围绕在这个数据的东西。比如上图</li>
+<li>如果出现这个现象，然后不停止模型，训练到最后就会都是一张脸了。</li>
+</ul>
+<blockquote>
+<p>这种现象的发生是因为，模型可能发现Discriminator的盲点。Discriminator无法看出Generator生成的图片是假的，模型尝到甜头，会朝着这个点猛打。<strong>至今并没有好的解决model collapse的方法，只能在发现的这个现象的时候，停止训练。</strong></p>
+</blockquote>
+<h2 id="mode-dropping"><a class="markdownIt-Anchor" href="#mode-dropping"></a> mode dropping</h2>
+<p>相比于mode collapse，mode dropping更难被侦测到。</p>
+<p>mode dropping是说，Generator只能产生真实数据的一部分东西。单纯看Generator的输出，似乎还错，多样性也足够。但是我们不知道的是，真实数据远远比这些多样性多得多。</p>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/2.png" class="" title="This is an example image">
+<h3 id="衡量generator产生的多样性够不够"><a class="markdownIt-Anchor" href="#衡量generator产生的多样性够不够"></a> 衡量Generator产生的多样性够不够</h3>
+<p>有一个方法，还是借助图像分类模型。</p>
+<ul>
+<li>与衡量Generator生成的图片好不好相反，如果我们的图片喂给这个分类模型，得出来的结果，不够平均，而是集中在某个类别。说明多样性不足。</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/3.png" class="" title="This is an example image">
+<h3 id="衡量generator产生的多样性够不够-2"><a class="markdownIt-Anchor" href="#衡量generator产生的多样性够不够-2"></a> 衡量Generator产生的多样性够不够</h3>
+<blockquote>
+<p>这样说明，似乎这个方法和衡量质量是互斥的。但是实际上不是的。衡量Generator好坏只输出一个张图片，看分类结果是不是某一类的概率压倒性的大于其他类的概率。</p>
+<ul>
+<li>而衡量多样性，是输入一堆图片。如果分类结果，每个类的数量是差不多的，比较平均。则说明多样性足够了。</li>
+</ul>
+</blockquote>
+<h2 id="frechet-inception-distancefid"><a class="markdownIt-Anchor" href="#frechet-inception-distancefid"></a> Frechet Inception Distance(FID)</h2>
+<p>这个方法把生成的图片丢给图像分类模型。<strong>但是我们要的不是最后输出的概率，我们要的是进行softmax之前的hidden vector。</strong></p>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/4.png" class="" title="This is an example image">
+<ul>
+<li>假设可以把这个高维的隐藏向量可以被降维，画在2D上。</li>
+<li>我们假设红点和蓝点符合高斯分布</li>
+<li>最后计算这两个高斯分布的Frechet distance。<strong>越小越好。</strong></li>
+</ul>
+<blockquote>
+<p>这里相当于只讲了有这个东西。如果要深入的话，要自己去找资料学习。</p>
+</blockquote>
+<h2 id="we-dont-want-memory-gan"><a class="markdownIt-Anchor" href="#we-dont-want-memory-gan"></a> We don’t want memory GAN</h2>
+<p>上述的评估方法也并没有完全解决GAN的训练问题。</p>
+<ul>
+<li>有这样一个问题，Generator生成的图片给我们的数据集里面的图片一样。这并不是我们想要的。
+<ul>
+<li>所以有时候，Generator生成的图片很好，FID计算出来也很低，人脸辨识系统也给很高的分数。<strong>但是它不一定是一个好的GAN。</strong></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>这个问题如果出现了，并没有什么好的解决方法。所以要评估一个Generator好坏，是非常困难的。光是这一点，就可以是一个研究的题目。这里有个文章，列出了20几种的评估方式，可以<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1802.03446">参考</a>。</p>
+</blockquote>
+<h1 id="conditional-gan"><a class="markdownIt-Anchor" href="#conditional-gan"></a> Conditional GAN</h1>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled16.png" class="" title="This is an example image">
+<ul>
+<li>跟Unconditional不一样的地方，这里还要有一个输入x。</li>
+<li>这样的结构，可以做text-to-image的任务。<strong>下面就用这个任务作为例子讲解什么是Conditional GAN</strong>。</li>
+<li>下面的结果，是李宏毅助教train出来的效果。</li>
+</ul>
+<h2 id="怎么做conditional-gan"><a class="markdownIt-Anchor" href="#怎么做conditional-gan"></a> 怎么做Conditional GAN?</h2>
+<ul>
+<li>跟Unconditional GAN不一样的地方在于，Discriminator要做出改变。</li>
+<li>这个时候的Discriminaotr不是只吃一个输入(图片y），它还需要将<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">x</span></span></span></span>也吃进来。然后也是要产生一个数值(scalar)。
+<ul>
+<li>现在光Generator生成的图片好，Discriminator并不会给高分。还要这个图片跟我们输入的x（文字叙述)有关，才会给高分。</li>
+<li><strong>所以，要训练这样一个Discriminator，我们需要文字跟图片成对的资料。/</strong></li>
+</ul>
+</li>
+</ul>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled17.png" class="" title="This is an example image">
+<blockquote>
+<p>除了文字叙述跟图片成对的资料外，我们还需要一些文字叙述跟图片对不上的资料。比如上图的左下角。理所当然的是，Conditional GAN当然不仅仅可以做text-to-image。它还可以做其他事情，比如下图。</p>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled18.png" class="" title="This is an example image">
+<ul>
+<li>帮我们给黑白着色啦</li>
+<li>给素描图，给我们一个对应的实物图片啦，等等。</li>
+</ul>
+</blockquote>
+<h1 id="gan从无标注资料里面学习"><a class="markdownIt-Anchor" href="#gan从无标注资料里面学习"></a> GAN从无标注资料里面学习</h1>
+<ul>
+<li>有这样一个莫名其妙的任务：我们想要将现实人脸的照片转换为对应二次元图像。
+<ul>
+<li>这样的任务，我们没办法获得任何的成对的数据。</li>
+</ul>
+</li>
+</ul>
+<h2 id="cycle-gan"><a class="markdownIt-Anchor" href="#cycle-gan"></a> Cycle GAN</h2>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled19.png" class="" title="This is an example image">
+<ul>
+<li>这个方法，为了保障蓝色的Generator，不会无视掉输入，加一个橙色的Generator。</li>
+<li>只要输入和橙色的输出两个越接近，说明蓝色的Generator并没有无视掉输入。</li>
+<li>那绿色的Discriminaor还是一个判断蓝色Generator输出地图片是不是一个二次元图像的图片。</li>
+</ul>
+<blockquote>
+<p>理论上，这个是有问题的。蓝色的Generator可能会把眼镜转换为纹身，橙色Generator再把纹身转换为眼睛。这是有可能会发生的！目前并没有什么好的方法解决，幸运的时候，实际操作起来，这种问题出现的概率比较小。</p>
+</blockquote>
+<p>还有一个Cycle GAN的进化版本叫Bi-Cycle GAN</p>
+<img src="/2022/06/09/%E7%94%9F%E6%88%90%E5%BC%8F%E5%AF%B9%E6%8A%97%E7%BD%91%E7%BB%9CGAN-%E7%90%86%E8%AE%BA/Untitled20.png" class="" title="This is an example image">
+<ul>
+<li>跟新增加的cycle GAN跟正常的cycle GAN 反过来了而已。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="reward-container">
+  <div>坚持原创技术分享，您的支持将鼓励我继续创作!</div>
+  <button>
+    Donate
+  </button>
+  <div class="post-reward">
+      <div>
+        <img src="/images/wechatpay.png" alt="Jack Liu WeChat Pay">
+        <span>WeChat Pay</span>
+      </div>
+      <div>
+        <img src="/images/alipay.png" alt="Jack Liu Alipay">
+        <span>Alipay</span>
+      </div>
+
+  </div>
+</div>
+
+          <div class="followme">
+  <span>Welcome to my other publishing channels</span>
+
+  <div class="social-list">
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://github.com/RoversCode">
+          <span class="icon">
+            <i class="fab fa-github"></i>
+          </span>
+
+          <span class="label">GitHub</span>
+        </a>
+      </div>
+
+      <div class="social-item">
+        <a target="_blank" class="social-link" href="https://www.zhihu.com/people/tian-qiao-di-xia-tao-mi-de-ren">
+          <span class="icon">
+            <i class="fab fa-zhihu"></i>
+          </span>
+
+          <span class="label">Zhihu</span>
+        </a>
+      </div>
+  </div>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/NoteBook/" rel="tag"><i class="fa fa-tag"></i> NoteBook</a>
+              <a href="/tags/GAN/" rel="tag"><i class="fa fa-tag"></i> GAN</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022/06/04/%E8%BD%AC%E7%BD%AE%E5%8D%B7%E7%A7%AF/" rel="prev" title="转置卷积">
+                  <i class="fa fa-chevron-left"></i> 转置卷积
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2022/07/05/%E6%9C%B4%E7%B4%A0%E8%B4%9D%E5%8F%B6%E6%96%AFNaiveBayes/" rel="next" title="朴素贝叶斯NaiveBayes">
+                  朴素贝叶斯NaiveBayes <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Jack Liu</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="Symbols count total">150k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="Reading time total">2:16</span>
+  </span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a>
+  </div><script defer src="/lib/three.js"></script><script defer src="/lib/lines.js"></script><script defer src="/lib/sphere.js"></script>
+
+    </div>
+  </footer>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="https://cdn.jsdelivr.net/npm/ribbon.js@1.0.2/dist/ribbon.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+<script class="next-config" data-name="chatra" type="application/json">{"enable":true,"async":true,"id":"RDWmpXgyaTrhDacBF"}</script>
+<script src="/js/third-party/chat/chatra.js"></script>
+<script async src="https://call.chatra.io/chatra.js"></script>
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":"ture","app_id":"vaQ3aKMLINcogqAieKeyopEl-MdYXbMMI","app_key":"0g5c7cfFntvGevgfC1j9EFNy","server_url":"https://vaq3akml.api.lncldglobal.com","security":true}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/katex.min.css" integrity="sha256-TThEtR+XalhWKkfF383YLOrI50NGNeIqrzS+q08afrY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.css" integrity="sha256-Wk20U9mS/kHGcSgkjSiRezW5exqT6wAOKwySOaLotXM=" crossorigin="anonymous">
+  <script class="next-config" data-name="katex" type="application/json">{"copy_tex_js":{"url":"https://cdn.jsdelivr.net/npm/katex@0.15.3/dist/contrib/copy-tex.min.js","integrity":"sha256-etSqbSVF4+Lwe8MGk/Vanc1sR+mWv+qOG73fxWw9p94="}}</script>
+  <script src="/js/third-party/math/katex.js"></script>
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"roverscode","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>
